@@ -243,11 +243,13 @@ async def generate_txt(request: GenerateRequest):
                     # PIS
                     'aliq_pis': adicao['taxes']['pis']['rate'],
                     'base_pis': adicao['taxes']['pis']['base_calc'],
-                    'qtde_pis': 0.0, # Not strictly in XML standard extracted yet, usually volume based
+                    'valor_pis': adicao['taxes']['pis']['value_collect'],
+                    'qtde_pis': 0.0,
                     
                     # COFINS
                     'aliq_cofins': adicao['taxes']['cofins']['rate'],
                     'base_cofins': adicao['taxes']['cofins']['base_calc'],
+                    'valor_cofins': adicao['taxes']['cofins']['value_collect'],
                     'qtde_cofins': 0.0,
                     
                     # IPI
@@ -256,17 +258,18 @@ async def generate_txt(request: GenerateRequest):
                     'qtde_ipi': 0.0,
                     
                     # Costs
-                    'valor_desconto': 0.0, # Not standard in basic DI
-                    'valor_iof': 0.0, # Usually calculated or distinct
+                    'valor_desconto': 0.0,
+                    'valor_iof': 0.0,
                     'despesas_aduaneiras': 0.0,
                     
                     # Logistics
                     'lote': '',
                     'validade': '',
                     
-                    # ICMS (User might need to input this, or derived)
-                    'aliq_icms': 0.0, 
-                    'base_icms': 0.0,
+                    # ICMS
+                    # Base ICMS per item = Merchandise Value (Unit Value * Qty)
+                    'aliq_icms': adicao['taxes']['icms']['rate'], 
+                    'base_icms': item['unit_value'] * item['qty'],
                     
                     # User fields
                     'internal_code': item['internal_code'],

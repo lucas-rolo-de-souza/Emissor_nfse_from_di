@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Card } from "./ui/Card";
-import { ChevronDown, ChevronRight, Check, AlertCircle } from "lucide-react";
+import { ChevronDown, ChevronRight, AlertCircle } from "lucide-react";
 
 interface FieldDef {
   name: string;
@@ -185,7 +185,6 @@ export function TxtAuditViewer({
             key={idx}
             line={line}
             originalLine={originalLines[idx]}
-            rowIndex={idx}
             schema={schema}
             type={type}
             onLineUpdate={(newLine) => handleLineUpdate(idx, newLine)}
@@ -199,14 +198,12 @@ export function TxtAuditViewer({
 function AuditRow({
   line,
   originalLine,
-  rowIndex,
   schema,
   type,
   onLineUpdate,
 }: {
   line: string;
   originalLine?: string;
-  rowIndex: number;
   schema: FieldDef[];
   type: string;
   onLineUpdate: (l: string) => void;
@@ -374,6 +371,7 @@ function EditableCell({
   return (
     <input
       type="text"
+      aria-label="Edit value"
       className="w-full min-w-[120px] bg-blue-50/20 border border-transparent hover:border-blue-300 focus:border-blue-500 focus:bg-white rounded px-1 py-0.5 font-mono text-blue-700 outline-none transition-all"
       value={localVal}
       onChange={(e) => setLocalVal(e.target.value)}

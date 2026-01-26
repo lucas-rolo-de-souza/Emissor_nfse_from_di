@@ -280,28 +280,28 @@ def build_txt_content(header_data: Dict, items_data: List[Dict]) -> str:
         i_line += fmt_str("1", 3)
         
         # 34 Base ICMS (15, 2) (Item)
-        i_line += fmt_val(0, 15, 2)
+        i_line += fmt_val(item.get('base_icms', 0), 15, 2)
         
         # 35 Valor FOB Origem (15, 7) - High precision
         i_line += fmt_val(tval, 15, 7)
         
         # 36-43 Taxes (PIS/COFINS) (Fill 0/Empty)
         # 36 Aliq PIS (6, 2)
-        i_line += fmt_val(0, 6, 2)
+        i_line += fmt_val(item.get('aliq_pis', 0), 6, 2)
         # 37 Vlr Qtde PIS (9, 2)
         i_line += fmt_val(0, 9, 2)
         # 38 Base PIS (15, 2)
-        i_line += fmt_val(0, 15, 2)
+        i_line += fmt_val(item.get('base_pis', 0), 15, 2)
         # 39 Valor PIS (15, 2)
-        i_line += fmt_val(0, 15, 2)
+        i_line += fmt_val(item.get('valor_pis', 0), 15, 2)
         # 40 Aliq COFINS (6, 2)
-        i_line += fmt_val(0, 6, 2)
+        i_line += fmt_val(item.get('aliq_cofins', 0), 6, 2)
         # 41 Vlr Qtde COFIN (9, 2)
         i_line += fmt_val(0, 9, 2)
         # 42 Base COFINS (15, 2)
-        i_line += fmt_val(0, 15, 2)
+        i_line += fmt_val(item.get('base_cofins', 0), 15, 2)
         # 43 Valor COFINS (15, 2)
-        i_line += fmt_val(0, 15, 2)
+        i_line += fmt_val(item.get('valor_cofins', 0), 15, 2)
         
         # 44 Numero Adicao (3) - New
         adi_num = item.get('adicao_number', '0')
