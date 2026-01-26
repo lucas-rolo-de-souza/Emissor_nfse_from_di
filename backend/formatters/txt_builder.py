@@ -136,21 +136,7 @@ def build_txt_content(header_data: Dict, items_data: List[Dict]) -> str:
     h_line += fmt_str("EX", 2)
     # 30 Via (1)
     h_line += fmt_int("1", 1)
-    # 31 Frete (15, 2)
-    h_line += fmt_val(header_data.get('valor_total_frete', 0), 15, 2)
-    # 32 ICMS (15, 2)
-    h_line += fmt_val(0, 15, 2)
-    # 33 Base ICMS (15, 2)
-    h_line += fmt_val(0, 15, 2)
-    # 34 Cod Importador (A, 4) -> New
-    h_line += fmt_str(header_data.get('cod_importador', ''), 4)
-    # 35 Cod Transportador (A, 20) -> New
-    h_line += fmt_str(header_data.get('cod_transportador', ''), 20)
-    # 36 Seguro (15, 2)
-    h_line += fmt_val(header_data.get('valor_total_seguro', 0), 15, 2)
-    # 37 IPI (15, 2)
-    h_line += fmt_val(0, 15, 2)
-    # 38 Total Merc (15, 2)
+    # Calculate Totals
     def safe_float(x):
         try:
             return float(x)
@@ -158,11 +144,31 @@ def build_txt_content(header_data: Dict, items_data: List[Dict]) -> str:
             return 0.0
 
     total_merc = sum(safe_float(i.get('total_value')) for i in items_data)
+    total_base_icms = sum(safe_float(i.get('base_icms')) for i in items_data)
+    total_val_icms = sum(safe_float(i.get('valor_icms_recolher')) for i in items_data) # Or should it be total ICMS amount? Using recolher as proxy for now or 0 if not calc
+    total_val_ipi = sum(safe_float(i.get('valor_ipi')) for i in items_data)
+    total_base_ipi = sum(safe_float(i.get('base_ipi')) for i in items_data)
+    
+    # 31 Frete (15, 2)
+    h_line += fmt_val(header_data.get('valor_total_frete', 0), 15, 2)
+    # 32 ICMS (15, 2)
+    h_line += fmt_val(total_val_icms, 15, 2)
+    # 33 Base ICMS (15, 2)
+    h_line += fmt_val(total_base_icms, 15, 2)
+    # 34 Cod Importador (A, 4) -> New
+    h_line += fmt_str(header_data.get('cod_importador', ''), 4)
+    # 35 Cod Transportador (A, 20) -> New
+    h_line += fmt_str(header_data.get('cod_transportador', ''), 20)
+    # 36 Seguro (15, 2)
+    h_line += fmt_val(header_data.get('valor_total_seguro', 0), 15, 2)
+    # 37 IPI (15, 2)
+    h_line += fmt_val(total_val_ipi, 15, 2)
+    # 38 Total Merc (15, 2)
     h_line += fmt_val(total_merc, 15, 2)
     # 39 Valor Total Nota (15, 2)
     h_line += fmt_val(total_merc, 15, 2)
     # 40 Base IPI (15, 2)
-    h_line += fmt_val(total_merc, 15, 2)
+    h_line += fmt_val(total_base_ipi, 15, 2)
     # 41 Filler (2)
     h_line += fmt_str("", 2)
     # 42 Cod Exportador (A, 4) -> New
@@ -223,7 +229,7 @@ def build_txt_content(header_data: Dict, items_data: List[Dict]) -> str:
         i_line += fmt_str("I", 1)
         
         # 16 Qty Rec (11, 4)
-        i_line += fmt_val(0, 11, 4)
+        i_line += fmt_val(qty, 11, 4)
         
         # 17 Descricao (150)
         desc = str(item.get('description', '')).split('\n')[0].strip()

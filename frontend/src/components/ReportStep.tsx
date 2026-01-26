@@ -2,7 +2,7 @@ import { CheckCircle, XCircle, RefreshCw, Download } from "lucide-react";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 import { motion } from "framer-motion";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 interface ReportStepProps {
   report: {
@@ -16,10 +16,15 @@ interface ReportStepProps {
 
 export function ReportStep({ report, onRestart }: ReportStepProps) {
   const isSuccess = report?.status === "success";
+  const hasDownloadedRef = useRef<string | null>(null);
 
   // Auto-download when URL is available
   useEffect(() => {
-    if (report?.downloadUrl) {
+    if (
+      report?.downloadUrl &&
+      hasDownloadedRef.current !== report.downloadUrl
+    ) {
+      hasDownloadedRef.current = report.downloadUrl;
       const link = document.createElement("a");
       link.href = report.downloadUrl;
       link.download = report.filename || "nota_fiscal.txt";

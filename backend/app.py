@@ -240,24 +240,26 @@ async def generate_txt(request: GenerateRequest):
                     # II
                     'aliq_ii': adicao['taxes']['ii']['rate'],
                     'valor_ii': adicao['taxes']['ii']['value_due'],
+                    'base_ii': adicao['taxes']['ii']['base_calc'],
                     
                     # PIS
                     'aliq_pis': adicao['taxes']['pis']['rate'],
                     'base_pis': adicao['taxes']['pis']['base_calc'],
                     'valor_pis': adicao['taxes']['pis']['value_collect'],
-                    'qtde_pis': 0.0,
+                    'qtde_pis': item['qty'],
                     
                     # COFINS
                     'aliq_cofins': adicao['taxes']['cofins']['rate'],
                     'base_cofins': adicao['taxes']['cofins']['base_calc'],
                     'valor_cofins': adicao['taxes']['cofins']['value_collect'],
-                    'qtde_cofins': 0.0,
+                    'qtde_cofins': item['qty'],
                     
                     # IPI
                     'aliq_ipi': adicao['taxes']['ipi']['rate'],
                     'valor_ipi': adicao['taxes']['ipi']['value_due'],
+                    'base_ipi': adicao['taxes']['ipi']['base_calc'],
                     'aliq_esp_ipi': 0.0, # Specific rate
-                    'qtde_ipi': 0.0,
+                    'qtde_ipi': item['qty'],
                     
                     # Costs
                     'valor_desconto': 0.0,

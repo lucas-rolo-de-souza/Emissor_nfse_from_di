@@ -258,6 +258,11 @@ def parse_di_xml(xml_content: bytes) -> Tuple[Dict[str, Any], List[Dict[str, Any
 
         icms_data = extract_tax(['icms', 'pisCofinsBaseCalculoAliquotaICMS'])
         
+        # --- Mercadorias Extraction (Early) ---
+        mercadorias = adicao.get('mercadoria', [])
+        if isinstance(mercadorias, dict):
+            mercadorias = [mercadorias]
+            
         # --- Apply Defaults if ICMS Rate is 0 ---
         current_ncm = get_text(adicao, 'dadosMercadoriaCodigoNcm')
         # Clean NCM just in case (remove dots)
@@ -265,16 +270,61 @@ def parse_di_xml(xml_content: bytes) -> Tuple[Dict[str, Any], List[Dict[str, Any
         
         if icms_data['rate'] == 0.0 and clean_ncm in ICMS_DEFAULTS:
             icms_data['rate'] = ICMS_DEFAULTS[clean_ncm]
-            # Likely we should assume base_calc is the merchandise value + taxes if not provided, 
-            # but for now we only inject the Rate as requested.
-
+            
+        # Calculate Merchandise Value for this item set
+        # We need to sum up items for this adicao or do it per item? 
+        # The structure here is Adicao -> Taxes.
+        # In this parser, 'taxes' is at Adicao level.
+        # Let's sum item values.
+        
+        adicao_merc_value = 0.0
+        for m in mercadorias:
+             q = sanitize_decimal(m.get('quantidade'), 5)
+             u = sanitize_decimal(m.get('valorUnitario'), 7)
+             adicao_merc_value += (q * u)
+        
+        # DEBUG
+        # print(f"DEBUG Merc Value: {adicao_merc_value}")
+            
+        # Custom PIS/COFINS handling logic can be added here if needed
+        # Standardize Tax Extraction
         taxes = {
             'ii': extract_tax(['ii', 'impostoImportacao']),
             'ipi': extract_tax(['ipi']),
-            'pis': extract_tax(['pisPasep', 'pis']), # Try pisPasep first (standard)
+            'pis': extract_tax(['pisPasep', 'pis']), 
             'cofins': extract_tax(['cofins']),
             'icms': icms_data,
         }
+        
+        # --- Generalized Tax Calculation Fallback ---
+        # Enforcement: If Rate exists but Value is 0, calculate it.
+        # Enforcement: If Rate exists but Base is 0, assume Adicao Value
+        
+        for tax_type, tax_data in taxes.items():
+            # Skip if no rate, likely not applicable (except for fixed amounts which we handle via other fields if needed)
+            if tax_data['rate'] == 0.0 and tax_type != 'icms': # ICMS has defaults logic applied earlier
+                continue
+                
+            # Fallback 1: Base Calculation
+            if tax_data['base_calc'] == 0.0:
+                # Use total adicao merchandise value as default base
+                tax_data['base_calc'] = adicao_merc_value
+            
+            # Fallback 2: Value Calculation (Ad Valorem)
+            # Use 'value_due' for II/IPI, 'value_collect' for others usually, but let's populate both if one missing?
+            # Actually, standard is: II/IPI map to value_due, PIS/COFINS/ICMS map to value_collect.
+            
+            target_val_key = 'value_due' if tax_type in ['ii', 'ipi'] else 'value_collect'
+            
+            if tax_data[target_val_key] == 0.0 and tax_data['rate'] > 0:
+                calc_val = tax_data['base_calc'] * (tax_data['rate'] / 100.0)
+                tax_data[target_val_key] = round(calc_val, 2)
+                # Ensure consistency if needed?
+                # For II/IPI often value_collect = value_due
+                if tax_data.get('value_collect', 0) == 0:
+                     tax_data['value_collect'] = tax_data[target_val_key]
+                if tax_data.get('value_due', 0) == 0:
+                     tax_data['value_due'] = tax_data[target_val_key]
 
         # --- NVEs ---
         nves = []
@@ -288,11 +338,9 @@ def parse_di_xml(xml_content: bytes) -> Tuple[Dict[str, Any], List[Dict[str, Any
                 'level': get_text(nve, 'nivelNome')
             })
 
-        # --- Mercadorias (Items) ---
+        # --- Mercadorias (Items) - Continued Processing ---
         items = []
-        mercadorias = adicao.get('mercadoria', [])
-        if isinstance(mercadorias, dict):
-            mercadorias = [mercadorias]
+        # mercadorias extracted above
             
         for mercadoria in mercadorias:
             desc = get_text(mercadoria, 'descricaoMercadoria')

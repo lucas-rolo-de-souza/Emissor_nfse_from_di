@@ -120,3 +120,28 @@ Let's assume:
     - `Valor ICMS = 1542.68 * 0.18 = R$ 277.68`
 
 This example illustrates the cascading nature of the taxes.
+
+## 8. Application Implementation Details
+
+### 8.1. Automatic Calculation Fallback
+
+In many DI XML files (especially Consultation formats), the explicit tax values (`ValorDevido`, `ValorRecolher`, `BaseCalculo`) might be zero, with only the Rate (`Aliquota`) provided.
+
+To handle this, the parsing engine implements the following fallback logic for **all taxes** (II, IPI, PIS, COFINS, ICMS):
+
+1.  **Base Calculation Default**:
+    - If `BaseCalculo` is missing (0.00), the system defaults it to the **Merchandise Value** of the Adição (Sum of `Quantity` \* `Unit Value` for all items in that addition).
+    - _Note: This is a simplification; theoretically IPI/ICMS bases are larger (cascading), but this ensures a non-zero base is available for estimation._
+
+2.  **Value Calculation Default**:
+    - If `ValorDevido` or `ValorRecolher` is missing (0.00) but a `Rate` (> 0) exists, calculation is performed as:
+    - `Value = Base * (Rate / 100)`
+
+### 8.2. Header Totals Calculation
+
+For the generation of the `NOTA FISCAL 2` TXT file, the application calculates the Document Header tax totals by summing the computed components of all individual items:
+
+- `Total Base ICMS` = Sum of (Item Unit Value \* Qty)
+- `Total Value ICMS` = Sum of Item ICMS Values (mapped from DI or defaulted)
+- `Total Base IPI` = Sum of Item IPI Bases
+- `Total Value IPI` = Sum of Item IPI Values

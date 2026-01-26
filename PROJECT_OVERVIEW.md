@@ -12,7 +12,7 @@ Import processes involve complex federal documents (DI) containing hundreds of f
 
 This application provides a simple web interface to:
 
-1.  **Parse** the official DI XML file to extract all relevant import data.
+1.  **Parse** the official DI XML file to extract all relevant import data, with **intelligent fallback logic** to calculate taxes (II, IPI, PIS, COFINS, ICMS) even when the XML contains zeros (e.g., only rates provided).
 2.  **Enrich** the data using an Excel template, allowing the user to map federal NCM codes to internal Item Codes and define logic for fields absent in the XML.
 3.  **Generate** a strictly formatted TXT file (Layout Nota Fiscal 2) ready for immediate import into the ERP.
 
