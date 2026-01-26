@@ -2,47 +2,87 @@ import { useState } from "react";
 import { Layout } from "./components/Layout";
 import { LandingStep } from "./components/LandingStep";
 import { UploadStep } from "./components/UploadStep";
+import { ReviewStep } from "./components/ReviewStep";
 import { ReportStep } from "./components/ReportStep";
+import { TxtViewerStep } from "./components/TxtViewerStep";
 import { AnimatePresence, motion } from "framer-motion";
+import type { ExtractedData } from "./types";
+
+const API_BASE = "http://localhost:8000";
 
 function App() {
-  const [step, setStep] = useState<"landing" | "upload" | "report">("landing");
+  const [step, setStep] = useState<
+    "landing" | "upload" | "review" | "report" | "viewer"
+  >("landing");
   const [report, setReport] = useState<{
     status: "success" | "error";
     message: string;
     downloadUrl?: string;
+    filename?: string;
   } | null>(null);
 
   const [xmlFile, setXmlFile] = useState<File | null>(null);
-  const [xlsxFile, setXlsxFile] = useState<File | null>(null);
+  const [extractedData, setExtractedData] = useState<ExtractedData | null>(
+    null,
+  );
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleDownloadTemplate = () => {
-    window.location.href = "http://localhost:8000/template";
-  };
-
-  const handleProcess = async () => {
-    if (!xmlFile || !xlsxFile) {
-      // This check is now redundant, but we keep it as a safeguard.
-      return;
-    }
+  // Extract data from XML
+  const handleExtract = async () => {
+    if (!xmlFile) return;
 
     setIsLoading(true);
     const formData = new FormData();
     formData.append("xml_file", xmlFile);
-    formData.append("xlsx_file", xlsxFile);
 
     try {
-      const response = await fetch("http://localhost:8000/process", {
+      const response = await fetch(`${API_BASE}/extract`, {
         method: "POST",
         body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setExtractedData(data);
+        setStep("review");
+      } else {
+        const err = await response.json();
+        setReport({
+          status: "error",
+          message: err.detail || "Failed to extract data from XML",
+        });
+        setStep("report");
+      }
+    } catch (e) {
+      const message =
+        e instanceof Error ? e.message : "Network error during extraction.";
+      setReport({ status: "error", message });
+      setStep("report");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Generate TXT from reviewed data
+  const handleGenerate = async () => {
+    if (!extractedData) return;
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE}/generate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(extractedData),
       });
 
       if (response.ok) {
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const contentDisposition = response.headers.get("content-disposition");
-        let filename = "processed_file.txt"; // Default filename
+        let filename = "nota_fiscal.txt";
         if (contentDisposition) {
           const match = contentDisposition.match(/filename="?([^"]+)"?/);
           if (match && match[1]) {
@@ -51,21 +91,25 @@ function App() {
         }
         setReport({
           status: "success",
-          message: `File "${filename}" processed successfully and is ready for download.`,
+          message: `File "${filename}" generated successfully and is ready for download.`,
           downloadUrl: url,
+          filename: filename,
         });
         setStep("report");
       } else {
         const err = await response.json();
+        const errorMessage = err.detail?.errors
+          ? err.detail.errors.join("\n")
+          : err.detail || "Failed to generate TXT";
         setReport({
           status: "error",
-          message: err.detail || "Processing failed",
+          message: errorMessage,
         });
         setStep("report");
       }
     } catch (e) {
       const message =
-        e instanceof Error ? e.message : "An unknown network error occurred.";
+        e instanceof Error ? e.message : "Network error during generation.";
       setReport({ status: "error", message });
       setStep("report");
     } finally {
@@ -77,7 +121,7 @@ function App() {
     setStep("landing");
     setReport(null);
     setXmlFile(null);
-    setXlsxFile(null);
+    setExtractedData(null);
   };
 
   return (
@@ -93,8 +137,8 @@ function App() {
             className="w-full flex justify-center"
           >
             <LandingStep
-              onDownloadTemplate={handleDownloadTemplate}
               onStart={() => setStep("upload")}
+              onViewTxt={() => setStep("viewer")}
             />
           </motion.div>
         )}
@@ -109,12 +153,29 @@ function App() {
             className="w-full flex justify-center"
           >
             <UploadStep
-              onProcess={handleProcess}
+              onExtract={handleExtract}
               onBack={() => setStep("landing")}
               xmlFile={xmlFile}
               setXmlFile={setXmlFile}
-              xlsxFile={xlsxFile}
-              setXlsxFile={setXlsxFile}
+              isLoading={isLoading}
+            />
+          </motion.div>
+        )}
+
+        {step === "review" && extractedData && (
+          <motion.div
+            key="review"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.3 }}
+            className="w-full flex justify-center"
+          >
+            <ReviewStep
+              data={extractedData}
+              onDataChange={setExtractedData}
+              onGenerate={handleGenerate}
+              onBack={() => setStep("upload")}
               isLoading={isLoading}
             />
           </motion.div>
@@ -130,6 +191,19 @@ function App() {
             className="w-full flex justify-center"
           >
             <ReportStep report={report} onRestart={handleRestart} />
+          </motion.div>
+        )}
+
+        {step === "viewer" && (
+          <motion.div
+            key="viewer"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.3 }}
+            className="w-full flex justify-center"
+          >
+            <TxtViewerStep onBack={() => setStep("landing")} />
           </motion.div>
         )}
       </AnimatePresence>

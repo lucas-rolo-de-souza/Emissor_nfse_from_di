@@ -39,6 +39,7 @@ def process_file_data(xml_content: bytes, xlsx_content: bytes) -> str:
         item['internal_code'] = internal_code
         item['output_unit'] = mapped_info.get('output_unit') or item.get('unit_commercial')
         item['cfop'] = mapped_info.get('cfop')
+        item['invoice_number'] = xml_header.get('invoice_number')
         
         processed_items.append(item)
         
@@ -58,6 +59,14 @@ def process_file_data(xml_content: bytes, xlsx_content: bytes) -> str:
         'numero_nota': xlsx_header.get('numero_nota'),
         'data_emissao': xlsx_header.get('data_emissao'),
         'data_entrada': xlsx_header.get('data_entrada'),
+        
+        # New Enriched Fields
+        'cfop': xlsx_header.get('cfop'),
+        'numero_po': xlsx_header.get('numero_po'),
+        'perc_reducao': xlsx_header.get('perc_reducao'),
+        'cod_importador': xlsx_header.get('cod_importador'),
+        'cod_transportador': xlsx_header.get('cod_transportador'),
+        'cod_exportador': xlsx_header.get('cod_exportador') or xml_header.get('exporter_name'),
     }
     
     txt_content = build_txt_content(header_data, processed_items)

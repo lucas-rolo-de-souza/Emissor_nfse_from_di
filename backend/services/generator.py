@@ -61,9 +61,15 @@ def generate_template() -> io.BytesIO:
     ws_header = wb.create_sheet(title="Cabecalho", index=1)
     
     headers_cabecalho = {
-        "A1": ("Numero da Nota", "Número da nota fiscal de entrada que será gerada. Ex: 12345"),
-        "B1": ("Data Emissao", "Data de emissão da nota. Formato: DD/MM/AAAA"),
-        "C1": ("Data Entrada", "Data de entrada das mercadorias. Formato: DD/MM/AAAA"),
+        "A1": ("Numero da Nota (Obrigatorio)", "Número da nota fiscal de entrada que será gerada. Ex: 12345"),
+        "B1": ("Data Emissao (DD/MM/AAAA)", "Data de emissão da nota."),
+        "C1": ("Data Entrada (DD/MM/AAAA)", "Data de entrada das mercadorias."),
+        "D1": ("CFOP Predominante (Obrigatorio)", "CFOP principal da nota (Ex: 3101). Irá no cabeçalho."),
+        "E1": ("Numero do PO (Opcional)", "Número do Pedido de Compra (Campo 44 do Layout)."),
+        "F1": ("Perc Reducao ICMS (Opcional)", "Percentual de redução da base de ICMS (Campo 45)."),
+        "G1": ("Codigo Importador (Opcional)", "Código do Importador no sistema destino."),
+        "H1": ("Codigo Transportador (Opcional)", "Código do Transportador no sistema destino."),
+        "I1": ("Codigo Exportador (Opcional)", "Código do Exportador no sistema destino."),
     }
     
     for cell, (title, comment_text) in headers_cabecalho.items():
@@ -75,7 +81,7 @@ def generate_template() -> io.BytesIO:
         ws_header.column_dimensions[cell[0]].width = 25
 
     # Example Row
-    example_header = ["12345", "23/01/2026", "24/01/2026"]
+    example_header = ["12345", "23/01/2026", "24/01/2026", "3101", "PO-999", "0.00", "IMP-001", "TRA-002", "EXP-003"]
     ws_header.append(example_header)
     for cell in ws_header[2]:
         cell.font = example_font

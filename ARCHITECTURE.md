@@ -1,140 +1,101 @@
 # System Architecture & Design
 
-This document provides a comprehensive overview of the **Emissor NFSe from DI** system, covering its architecture, data flow, specifications, and component design.
+This document details the technical architecture of the **Emissor NFSe from DI** system.
 
-## 1. High-Level Architecture
+## 1. Architecture Overview
 
-The system follows a simple **Client-Server** architecture designed for stateless file processing.
+The system is a **stateless file processing pipeline** exposed via a web interface.
 
-- **Frontend**: A Single Page Application (SPA) built with React and Vite. It serves as the user interface for file file uploads (XML & XLSX) and downloading the processed result.
-- **Backend**: A RESTful API built with FastAPI (Python). It handles the core business logic: parsing, data merging, validation, and formatting.
+- **Frontend (UI)**: React + TypeScript. Handles file selection, validation feedback, and download initiation.
+- **Backend (API)**: Python (FastAPI). Performs the heavy lifting of parsing, transformation, and formatting.
 
 ```mermaid
 graph LR
-    User[User] -->|Uploads XML + XLSX| Frontend[React Frontend]
-    Frontend -->|POST /process| Backend[FastAPI Backend]
-    Backend -->|Parses| XML[XML Parser]
-    Backend -->|Parses| XLSX[XLSX Parser]
-    Backend -->|Merges & Validates| Processor[Processor Service]
-    Processor -->|Formats| TXT[TXT Builder]
-    Backend -->|Returns TXT| Frontend
-    Frontend -->|Downloads| User
+    User -->|DI XML + Map XLSX| UI[React Frontend]
+    UI -->|POST /process| API[FastAPI Backend]
+
+    subgraph Backend Services
+        API --> Processor
+        Processor -->|Extracts| XMLParser[XML Parser]
+        Processor -->|Loads Map| XLSXParser[XLSX Parser]
+        Processor -->|Merges| Logic[Business Logic]
+        Logic -->|Formats| TXTBuilder[TXT Builder]
+    end
+
+    TXTBuilder -->|TXT File| API
+    API -->|Download| UI
+    UI -->|Save| User
 ```
 
 ## 2. Technology Stack
 
-### Frontend
+- **Frontend**: React, Vite, TailwindCSS, Lucide Icons.
+- **Backend**: Python 3.11+, FastAPI, Uvicorn.
+- **Libraries**:
+  - `xmltodict`: For converting DI XML to Python dictionaries.
+  - `openpyxl`: For reading/writing Excel mapping files.
+  - `pydantic`: For data models and validation.
 
-- **Framework**: React (Vite)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **HTTP Client**: Native `fetch` (inferred)
+## 3. Data Processing Pipeline
 
-### Backend
+### 3.1. Parsing Strategy
 
-- **Framework**: FastAPI
-- **Language**: Python 3.x
-- **Server**: Uvicorn
-- **Key Libraries**:
-  - `xmltodict`: For XML parsing.
-  - `pandas` / `openpyxl`: For Excel processing.
-  - `pydantic`: For data validation (potential use, mostly standard typing used).
+- **DI XML**: Parsed using `xmltodict`.
+  - **Schema Compliance**: Adheres to the **[Esquema (XSD) do XML da Consulta](https://www.gov.br/receitafederal/pt-br/assuntos/aduana-e-comercio-exterior/manuais/despacho-de-importacao/sistemas/siscomex-importacao-web/declaracao-de-importacao/funcionalidades/links-para-arquivos/esquema-xsd-do-xml-da-consulta.pdf)**.
+  - _Key Entities_: Header (DI Number, Dates, Importer, Cargo), Items (Adições -> Mercadorias).
+- **Mapping XLSX**: Parsed using `openpyxl`.
+  - _Key_: NCM Code (8 digits).
+  - _Value_: Internal Product Code, CFOP, Custom Output Unit.
 
-## 3. System Flow
+### 3.2. Data Merging (The "Processor")
 
-1.  **Template Download**: User downloads a standard Excel template (`/template`) to map NCM codes to internal product codes and CFOPs.
-2.  **File Selection**: User selects the _Declaração de Importação_ (DI) XML file and the filled Mapping XLSX file.
-3.  **Upload**: Frontend sends both files as `multipart/form-data` to the `/process` endpoint.
-4.  **Processing**:
-    - Backend validates file extensions.
-    - **XML Parsing**: Extracts header info (DI Number, Date) and line items (Adições, Mercadorias).
-    - **Mapping Loading**: Reads the Excel file into a lookup dictionary (Key: NCM).
-    - **Data Merging**: For each item in the XML, the system looks up its NCM in the mapping to find the corresponding `Internal Code`, `CFOP`, and `Output Unit`.
-    - **Validation**: Checks if NCMs exist in the mapping and if required fields are present. Errors are collected and raised if any match fails.
-    - **Text Generation**: Converts the merged data into a strict fixed-width text format required by the target system.
-5.  **Response**: The generated TXT file is streamed back to the client.
-6.  **Download**: Browser prompts the user to save the file (e.g., `Processado_DI12345.txt`).
+The `Processor` service implements a **Left Join** logic:
 
-## 4. Dataflow & Data Specifications
+1.  Iterate through every Mercadoria/Item in the DI XML.
+2.  Clean the NCM (remove dots).
+3.  Look up the NCM in the loaded XLSX mapping.
+4.  If found: Attach `Internal Code` and `CFOP` to the item.
+5.  If not found: Raise a validation error (blocking the process to ensure data integrity).
 
-### 4.1. Inputs
+### 3.3. Output Generation (The "Formatter")
 
-#### A. DI XML (`.xml`)
+The output is a **Fixed-Width Text File** following the **"Layout - Nota Fiscal 2"** specification (proprietary ERP format).
 
-Standard _Declaração de Importação_ format.
+> **Note**: This is distinct from the [Leiaute do TXT da DI](https://www.gov.br/receitafederal/pt-br/assuntos/aduana-e-comercio-exterior/manuais/despacho-de-importacao/sistemas/siscomex-importacao-web/declaracao-de-importacao/funcionalidades/links-para-arquivos/leiaute-do-txt-da-di.doc) provided by Siscomex. We convert _from_ Siscomex XML _to_ this specific ERP TXT layout.
 
-- **Key Path**: `<declaracaoImportacao>`
-- **Header Data**:
-  - `numeroDI`: Import Declaration Number.
-  - `dataRegistro`: Registration Date.
-- **Item Data** (`<adicao>` -> `<mercadoria>`):
-  - `numeroAdicao`: Addition Number.
-  - `dadosMercadoriaCodigoNcm`: NCM Code.
-  - `descricaoMercadoria`: Product Description.
-  - `quantidade`: Commercial Quantity.
-  - `unidadeMedida`: Commercial Unit.
-  - `valorUnitario`: Unit Value.
-  - `valorTotalCondicaoVenda`: Total Value.
+- **File Structure**:
+  - **Header Record (Type 1)**: 380 characters. Contains summary data (Importer, Totals, Dates).
+  - **Item Records (Type 2)**: 688 characters per item. Contains product details, tax rates, and values.
+- **Formatting Rules**:
+  - **Numeric (N)**: Zero-padded left, explicit dot separator for decimals (e.g., `000150.00`).
+  - **Alpha (A/C)**: Space-padded right (e.g., `TEXT      `).
+  - **Dates**: `AAAAMMDD` or `DDMMAA` depending on the specific field.
 
-#### B. Mapping XLSX (`.xlsx`)
+## 4. Key Components
 
-A simple lookup table to enrich the XML data with internal system codes.
+### 4.1. `backend/parsers/xml_parser.py`
 
-- **Columns**:
-  - `NCM` (Key): The taxonomy code matching the XML.
-  - `Internal Code`: The SKU/Product ID in the target ERP/System.
-  - `CFOP`: Código Fiscal de Operações e Prestações.
-  - `Output Unit` (Optional): Unit to be used in output if different from XML.
+- Responsible for navigating the complex DI XML tree.
+- Normalizes lists (handling cases where XML converts single items to dicts and multiple items to lists).
+- Extracts tax fields (II, IPI, PIS, COFINS) from nested structures.
 
-### 4.2. Output
+### 4.2. `backend/formatters/txt_builder.py`
 
-#### Processed TXT (`.txt`)
+- Implements the "Nota Fiscal 2" layout.
+- Contains the logic for field positioning and padding.
+- **Note**: This component must be strictly synchronized with `format_guidelines/NOTA_FISCAL_2_CONTEXT.md`.
 
-A fixed-width text file with massive positional formatting.
+## 5. Domain Knowledge
 
-- **Structure**:
-  - **Header (Record 1)**: Contains summary info (Note Number, Dates, Totals, Exporter Name).
-    - Example fields: `Tipo`, `Emp`, `Filial`, `Nota`, `Total Merc`, `Nome Exp`.
-  - **Items (Record 2)**: One line per product/mercadoria.
-    - Example fields: `NCM` (8 chars), `Internal Code` (22 chars), `Qty` (13,3 format), `Unit Value` (15,5 format), `Description` (100 chars).
+### 5.1. DI (Declaração de Importação)
 
-**Data Transformation Logic**:
+A federal document. The parsing logic relies on definitions found in the [Dicionário de Dados da DI](https://www.gov.br/receitafederal/pt-br/assuntos/aduana-e-comercio-exterior/manuais/despacho-de-importacao/sistemas/siscomex-importacao-web/declaracao-de-importacao/funcionalidades/links-para-arquivos/dicionario-de-dados-da-di.doc) and [Adição](https://www.gov.br/receitafederal/pt-br/assuntos/aduana-e-comercio-exterior/manuais/despacho-de-importacao/sistemas/siscomex-importacao-web/declaracao-de-importacao/funcionalidades/links-para-arquivos/dicionario-de-dados-da-adicao.doc). Focuses on extracting Commercial Quantity, Unit Value, Total Value, and Tax Rates.
 
-- **NCM**: Stripped of non-numeric characters, truncated to 8 digits.
-- **Numbers**: Formatted with precise decimal places (e.g., `15,5` means 15 total chars, 5 decimal places), zero-padded (left) or space-padded depending on field type.
-- **Strings**: Truncated/padded to specific lengths.
+### 5.2. NCM (Nomenclatura Comum do Mercosul)
 
-## 5. System Design (Backend)
+The primary key used to link the Federal data (XML) with the Company data (Excel).
 
-The backend is structured as a modular service-oriented application.
+## 6. Future Improvements
 
-```
-backend/
-├── app.py                  # Entry point, Routes
-├── parsers/
-│   ├── xml_parser.py       # XML -> List[Dict]
-│   └── xlsx_parser.py      # XLSX -> Dict[NCM, Data]
-├── services/
-│   ├── processor.py        # Business Logic (Merge & Validation)
-│   └── generator.py        # Template generation
-└── formatters/
-    └── txt_builder.py      # Dict -> Fixed-Width String
-```
-
-### Key Components
-
-1.  **`xml_parser.parse_di_xml(bytes)`**
-    - Uses `xmltodict` to flatten the nested XML structure.
-    - Handles list/dict polymorphism (single item vs list of items).
-    - Returns a flat list of items enriched with parent context (DI info).
-
-2.  **`services.processor.process_file_data(xml, xlsx)`**
-    - The "Controller" logic.
-    - Calls parsers.
-    - Performs the **Join Operation**: `Left Join` on XML Items using NCM as the key.
-    - Accumulates errors (e.g., "NCM X not found in mapping") to provide a single comprehensive error message.
-
-3.  **`formatters.txt_builder`**
-    - Contains the strict spec definitions.
-    - `FixedWidth` class handles the low-level string manipulation (padding, decimal formatting).
-    - `build_txt_content` maps the internal dictionary keys to the specific fixed positions of the output file.
+- **Validation**: Implement XSD validation using `lxml` for stricter input checking.
+- **Database**: Add a local database to persist mappings so the user doesn't need to upload the Excel file every time.

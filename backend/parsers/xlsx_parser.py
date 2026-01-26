@@ -56,6 +56,13 @@ def parse_mapping_xlsx(xlsx_content: bytes) -> Tuple[Dict[str, Dict[str, Any]], 
                 "numero_nota": get_val("Numero da Nota (Obrigatorio)"),
                 "data_emissao": get_val("Data Emissao (DD/MM/AAAA)"),
                 "data_entrada": get_val("Data Entrada (DD/MM/AAAA)"),
+                "cfop": get_val("CFOP Predominante (Obrigatorio)"),
+                "numero_po": get_val("Numero do PO (Opcional)"),
+                "perc_reducao": get_val("Perc Reducao ICMS (Opcional)"),
+                "cod_importador": get_val("Codigo Importador (Opcional)"),
+                "cod_transportador": get_val("Codigo Transportador (Opcional)"),
+                "cod_exportador": get_val("Codigo Exportador (Opcional)"),
+                # Compat with older template versions if needed, but we prioritize the new names
                 "valor_frete": get_val("Valor Frete Total (Opcional)"),
                 "valor_seguro": get_val("Valor Seguro Total (Opcional)"),
                 "nome_exportador": get_val("Nome Exportador (Opcional)")

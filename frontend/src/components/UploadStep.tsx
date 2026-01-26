@@ -1,30 +1,25 @@
-import { useState } from "react";
-import { ArrowLeft, Rocket } from "lucide-react";
+import { ArrowLeft, FileSearch } from "lucide-react";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 import { FileInput } from "./ui/FileInput";
+import { useState } from "react";
 
 interface UploadStepProps {
-  onProcess: () => void;
+  onExtract: () => void;
   onBack: () => void;
   xmlFile: File | null;
   setXmlFile: (file: File | null) => void;
-  xlsxFile: File | null;
-  setXlsxFile: (file: File | null) => void;
   isLoading: boolean;
 }
 
 export function UploadStep({
-  onProcess,
+  onExtract,
   onBack,
   xmlFile,
   setXmlFile,
-  xlsxFile,
-  setXlsxFile,
   isLoading,
 }: UploadStepProps) {
   const [xmlError, setXmlError] = useState<string | undefined>();
-  const [xlsxError, setXlsxError] = useState<string | undefined>();
 
   const handleXmlFileChange = (file: File | null) => {
     setXmlFile(file);
@@ -37,18 +32,7 @@ export function UploadStep({
     }
   };
 
-  const handleXlsxFileChange = (file: File | null) => {
-    setXlsxFile(file);
-    if (file && !file.name.endsWith(".xlsx")) {
-      setXlsxError("Invalid file type. Please upload an XLSX file.");
-    } else if (file && file.size === 0) {
-      setXlsxError("File cannot be empty.");
-    } else {
-      setXlsxError(undefined);
-    }
-  };
-
-  const canProcess = !!xmlFile && !!xlsxFile && !xmlError && !xlsxError;
+  const canExtract = !!xmlFile && !xmlError;
 
   return (
     <Card className="w-full max-w-lg">
@@ -60,7 +44,7 @@ export function UploadStep({
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h2 className="text-2xl font-bold text-slate-900">Upload Files</h2>
+        <h2 className="text-2xl font-bold text-slate-900">Upload DI XML</h2>
       </div>
 
       <div className="space-y-6">
@@ -70,28 +54,24 @@ export function UploadStep({
           value={xmlFile}
           onChange={handleXmlFileChange}
           error={xmlError}
-          description="Upload the XML file for the 'Declaração de Importação'."
+          description="Upload the XML file from the 'Espelho da DI' (Declaração de Importação)."
         />
 
-        <FileInput
-          label="Filled Model XLSX"
-          accept=".xlsx"
-          value={xlsxFile}
-          onChange={handleXlsxFileChange}
-          error={xlsxError}
-          description="Upload the XLSX mapping file with NCM, Internal Code, and CFOP."
-        />
+        <p className="text-sm text-slate-500">
+          After extracting the data, you'll be able to review and fill in
+          additional information before generating the TXT file.
+        </p>
 
         <div className="pt-4">
           <Button
-            onClick={onProcess}
-            disabled={!canProcess || isLoading}
+            onClick={onExtract}
+            disabled={!canExtract || isLoading}
             isLoading={isLoading}
             className="w-full"
             size="lg"
           >
-            <Rocket className="w-5 h-5 mr-2" />
-            Processar Arquivos
+            <FileSearch className="w-5 h-5 mr-2" />
+            Extrair Dados
           </Button>
         </div>
       </div>

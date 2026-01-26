@@ -1,60 +1,73 @@
-import { ArrowRight, Download } from "lucide-react";
+import { ArrowRight, FileText, Eye } from "lucide-react";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
 
 interface LandingStepProps {
-  onDownloadTemplate: () => void;
   onStart: () => void;
+  onViewTxt: () => void;
 }
 
-export function LandingStep({ onDownloadTemplate, onStart }: LandingStepProps) {
+export function LandingStep({ onStart, onViewTxt }: LandingStepProps) {
   return (
-    <Card className="w-full max-w-2xl text-center">
+    <Card className="w-full max-w-xl text-center">
       <div className="mb-8 space-y-2">
         <h1 className="text-4xl font-bold tracking-tight text-slate-900">
           Gerador de{" "}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-600">
-            NFSE
+            Nota Fiscal
           </span>
         </h1>
         <p className="text-lg text-slate-600">
-          Automate your Import Declaration to Nota Fiscal conversion with
-          AI-powered precision.
+          Converta o Espelho da DI em arquivo TXT para importação.
         </p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col items-center text-center hover:bg-slate-100 transition-colors">
-          <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
-            <Download className="w-6 h-6" />
-          </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">
-            1. Get the Template
-          </h3>
-          <p className="text-sm text-slate-500 mb-6">
-            Download the Excel template to prepare your data.
-          </p>
-          <Button
-            variant="secondary"
-            className="w-full mt-auto"
-            onClick={onDownloadTemplate}
-          >
-            Baixar Modelo XLSX
-          </Button>
+      <div className="p-6 rounded-2xl bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100">
+        <div className="w-16 h-16 mx-auto bg-gradient-to-br from-indigo-500 to-blue-600 text-white rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+          <FileText className="w-8 h-8" />
         </div>
 
-        <div className="p-6 rounded-2xl bg-indigo-50/50 border border-indigo-100 flex flex-col items-center text-center hover:bg-indigo-50 transition-colors">
-          <div className="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-4">
-            <ArrowRight className="w-6 h-6" />
-          </div>
-          <h3 className="text-lg font-semibold text-slate-900 mb-2">
-            2. Start Processing
-          </h3>
-          <p className="text-sm text-slate-500 mb-6">
-            Upload your DI XML and filled Excel file.
-          </p>
-          <Button className="w-full mt-auto" onClick={onStart}>
-            Iniciar Processamento
+        <h3 className="text-lg font-semibold text-slate-900 mb-2">
+          Como Funciona
+        </h3>
+
+        <ol className="text-sm text-slate-600 text-left space-y-2 mb-6">
+          <li className="flex items-start gap-2">
+            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center">
+              1
+            </span>
+            <span>Faça upload do arquivo XML (Espelho da DI)</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center">
+              2
+            </span>
+            <span>
+              Revise os dados extraídos e preencha as informações adicionais
+            </span>
+          </li>
+          <li className="flex items-start gap-2">
+            <span className="flex-shrink-0 w-5 h-5 rounded-full bg-indigo-100 text-indigo-600 text-xs font-bold flex items-center justify-center">
+              3
+            </span>
+            <span>Gere o arquivo TXT para importação no sistema fiscal</span>
+          </li>
+        </ol>
+
+        <div className="space-y-3">
+          <Button className="w-full" size="lg" onClick={onStart}>
+            Iniciar
+            <ArrowRight className="w-5 h-5 ml-2" />
+          </Button>
+
+          <Button
+            className="w-full"
+            size="lg"
+            variant="outline"
+            onClick={onViewTxt}
+          >
+            <Eye className="w-5 h-5 mr-2" />
+            Visualizar TXT Existente
           </Button>
         </div>
       </div>

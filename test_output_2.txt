@@ -1,0 +1,65 @@
+============================= test session starts =============================
+platform win32 -- Python 3.14.2, pytest-9.0.2, pluggy-1.6.0
+rootdir: Z:\Github\My Projects\Emissor_nfse_from_di
+plugins: anyio-4.12.1
+collected 3 items
+
+backend\tests\test_api_v2.py .F.                                         [100%]
+
+================================== FAILURES ===================================
+_______________________ test_generate_endpoint_success ________________________
+
+    def test_generate_endpoint_success():
+        # 1. Prepare Request Payload
+        payload = {
+            "header": {
+                "di_number": "2200000001",
+                "di_date": "20/01/2025",
+                "exporter_name": "TEST EXPORTER LTD",
+                "valor_total_frete": "150.00",
+                "valor_total_seguro": "50.50",
+                # User inputs
+                "numero_nota": "000123",
+                "data_emissao": "01/02/2026",
+                "data_entrada": "02/02/2026",
+                "cfop": "3102",
+                "numero_po": "",
+                "perc_reducao": "",
+                "cod_importador": "",
+                "cod_transportador": "",
+                "cod_exportador": ""
+            },
+            "items": [
+                {
+                    "adicao_number": "001",
+                    "ncm": "85044021",
+                    "description": "SENSOR INDUCTIVE",
+                    "qty_commercial": "10",
+                    "unit_commercial": "UN",
+                    "unit_value": "5.00",
+                    "total_value": "50.00",
+                    "item_sequence": "1",
+                    # User inputs
+                    "internal_code": "PROD-001",
+                    "output_unit": "UN"
+                }
+            ]
+        }
+    
+        # 2. Call Generate
+        response = client.post("/generate", json=payload)
+    
+        if response.status_code != 200:
+            print("\nAPI Error:", response.json())
+    
+>       assert response.status_code == 200
+E       assert 422 == 200
+E        +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+
+backend\tests\test_api_v2.py:99: AssertionError
+---------------------------- Captured stdout call -----------------------------
+
+API Error: {'detail': {'errors': ['Item 1: CFOP is required']}}
+=========================== short test summary info ===========================
+FAILED backend/tests/test_api_v2.py::test_generate_endpoint_success - assert ...
+========================= 1 failed, 2 passed in 0.41s =========================
