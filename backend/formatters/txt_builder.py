@@ -212,7 +212,7 @@ def build_txt_content(header_data: Dict, items_data: List[Dict]) -> str:
         i_line += fmt_str(unit, 3)
         
         # 13 Vlr IPI (15, 2)
-        i_line += fmt_val(0, 15, 2)
+        i_line += fmt_val(item.get('valor_ipi', 0), 15, 2)
         
         # 14 Valor Mercadoria (15, 2) (CIF+II or Customs Value)
         uval = item.get('unit_value', 0)
@@ -241,9 +241,9 @@ def build_txt_content(header_data: Dict, items_data: List[Dict]) -> str:
         i_line += fmt_val(seguro, 15, 2)
         
         # 21 Valor II (15, 2)
-        i_line += fmt_val(0, 15, 2)
+        i_line += fmt_val(item.get('valor_ii', 0), 15, 2)
         # 22 Aliq IPI (5, 2)
-        i_line += fmt_val(0, 5, 2)
+        i_line += fmt_val(item.get('aliq_ipi', 0), 5, 2)
         # 23 Despesas (15, 2)
         i_line += fmt_val(0, 15, 2)
         
@@ -257,7 +257,7 @@ def build_txt_content(header_data: Dict, items_data: List[Dict]) -> str:
         i_line += fmt_str(item.get('invoice_number', ''), 15)
         
         # 27 ICMS Recolher (15, 2)
-        i_line += fmt_val(0, 15, 2)
+        i_line += fmt_val(item.get('valor_icms_recolher', 0), 15, 2)
         
         # 28 Peso Liquido (11, 4) - New extraction
         peso = item.get('net_weight', 0)
@@ -267,7 +267,7 @@ def build_txt_content(header_data: Dict, items_data: List[Dict]) -> str:
         i_line += fmt_str("", 4)
         
         # 30 Aliq II (5, 2)
-        i_line += fmt_val(0, 5, 2)
+        i_line += fmt_val(item.get('aliq_ii', 0), 5, 2)
         
         # 31 Num Pedido (C, 17)
         i_line += fmt_str("", 17)

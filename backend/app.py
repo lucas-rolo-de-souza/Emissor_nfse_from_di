@@ -239,6 +239,7 @@ async def generate_txt(request: GenerateRequest):
                     # --- Tax & Extra Fields ---
                     # II
                     'aliq_ii': adicao['taxes']['ii']['rate'],
+                    'valor_ii': adicao['taxes']['ii']['value_due'],
                     
                     # PIS
                     'aliq_pis': adicao['taxes']['pis']['rate'],
@@ -254,6 +255,7 @@ async def generate_txt(request: GenerateRequest):
                     
                     # IPI
                     'aliq_ipi': adicao['taxes']['ipi']['rate'],
+                    'valor_ipi': adicao['taxes']['ipi']['value_due'],
                     'aliq_esp_ipi': 0.0, # Specific rate
                     'qtde_ipi': 0.0,
                     
@@ -270,6 +272,7 @@ async def generate_txt(request: GenerateRequest):
                     # Base ICMS per item = Merchandise Value (Unit Value * Qty)
                     'aliq_icms': adicao['taxes']['icms']['rate'], 
                     'base_icms': item['unit_value'] * item['qty'],
+                    'valor_icms_recolher': adicao['taxes']['icms']['value_collect'],
                     
                     # User fields
                     'internal_code': item['internal_code'],
