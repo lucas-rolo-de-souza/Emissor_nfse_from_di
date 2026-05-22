@@ -34,7 +34,7 @@ class FixedWidth:
 
     @staticmethod
     def sanitize_date(value: Any, default: str) -> str:
-        """Normalize date to DDMMYYYY (8 digits). Accepts DD/MM/AAAA or DDMMYYYY."""
+        """Normalize date to AAAAMMDD (8 digits) as required by TOTVS SIGAEIC spec."""
         digits = ''.join(filter(str.isdigit, str(value)))
         return digits if len(digits) == 8 else default
 
@@ -49,7 +49,7 @@ class FixedWidth:
 def _build_header_line(header_data: Dict, items_data: List[Dict]) -> str:
     fw = FixedWidth
     now_dt = datetime.now()
-    default_date = now_dt.strftime("%d%m%Y")
+    default_date = now_dt.strftime("%Y%m%d")
 
     note_num = ''.join(filter(str.isdigit, str(header_data.get('numero_nota') or header_data.get('di_number', '0'))))[:9].zfill(9)
 
@@ -105,8 +105,8 @@ def _build_header_line(header_data: Dict, items_data: List[Dict]) -> str:
     line += fw.format_alpha(header_data.get('numero_processo', ''), 17)
     # 12 Quantidade de Itens (N, 2) — pos 073-074
     line += fw.format_int(len(items_data), 2)
-    # 13 Data de Referência (N, 6) — pos 075-080
-    line += fw.format_int(now_dt.strftime("%m%Y"), 6)
+    # 13 Data de Referência (N, 6) — pos 075-080 (NOT_USED per spec)
+    line += fw.format_int("", 6)
     # 14 Data de Emissão (N, 8) — pos 081-088 (AAAAMMDD)
     line += fw.format_int(dt_emissao, 8)
     # 15 Data de Entrada (N, 8) — pos 089-096 (AAAAMMDD)
@@ -223,8 +223,8 @@ def _build_item_line(item: Dict, note_num: str) -> str:
     line += fw.format_num(tval, 15, 2)
     # 15 Flag de Entrada (A, 1) — pos 099
     line += fw.format_alpha("I", 1)
-    # 16 Quantidade do Recebimento (N, 11, 4) — pos 100-110
-    line += fw.format_num(qty, 11, 4)
+    # 16 Quantidade do Recebimento (N, 11, 4) — pos 100-110 (NOT_USED per spec)
+    line += fw.format_num(0, 11, 4)
     # 17 Descrição do Produto (A, 150) — pos 111-260
     line += fw.format_alpha(f"{internal} - {desc}", 150)
     # 18 Valor Fob R$ (N, 15, 2) — pos 261-275
