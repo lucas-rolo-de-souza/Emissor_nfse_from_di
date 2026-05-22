@@ -109,6 +109,7 @@ export interface HeaderData {
   data_emissao: string;
   data_entrada: string;
   cfop: string;
+  numero_processo?: string;
   numero_po: string;
   perc_reducao: string;
   cod_importador: string;
@@ -128,6 +129,7 @@ export const REQUIRED_HEADER_FIELDS: (keyof HeaderData)[] = [
   "data_emissao",
   "data_entrada",
   "cfop",
+  "numero_processo",
 ];
 
 export const REQUIRED_ITEM_FIELDS: (keyof ItemData)[] = ["internal_code"];
@@ -153,6 +155,7 @@ export const HEADER_LABELS: Partial<Record<keyof HeaderData, string>> = {
   data_emissao: "Data Emissão *",
   data_entrada: "Data Entrada *",
   cfop: "CFOP *",
+  numero_processo: "Nº Processo Easy *",
   numero_po: "Número PO",
   cod_importador: "Cód. Importador",
   cod_transportador: "Cód. Transportador",

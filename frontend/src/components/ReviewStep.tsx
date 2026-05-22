@@ -55,7 +55,7 @@ const HEADER_SECTIONS: HeaderSection[] = [
   },
   {
     title: "Informações Adicionais",
-    fields: ["numero_po", "invoice_number", "provenance_country_code", "urf_entry", "transport_via"],
+    fields: ["numero_processo", "numero_po", "invoice_number", "provenance_country_code", "urf_entry", "transport_via"],
   },
 ];
 

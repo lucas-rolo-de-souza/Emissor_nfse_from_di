@@ -123,6 +123,7 @@ class HeaderData(BaseModel):
     data_emissao: str
     data_entrada: str
     cfop: str
+    numero_processo: Optional[str] = None
     numero_po: Optional[str] = None
     perc_reducao: Optional[str] = None
     cod_importador: Optional[str] = None
@@ -155,6 +156,11 @@ def _flatten_item(adicao: dict, item: dict, header_data: dict) -> dict:
         'seguro_item': adicao['insurance_reais'],
         'invoice_number': header_data.get('invoice_number', ''),
         'di_number': header_data.get('di_number', ''),
+        'numero_processo': header_data.get('numero_processo', ''),
+        'fob_reais': adicao['fob_reais'],
+        'fob_currency': adicao['fob_currency'],
+        'item_pedido_compra': str(item.get('sequence', '')).zfill(4)[:4],
+        'numero_pedido': header_data.get('numero_po', ''),
         # II
         'aliq_ii': adicao['taxes']['ii']['rate'],
         'valor_ii': adicao['taxes']['ii']['value_due'],
@@ -233,6 +239,7 @@ async def extract_data(xml_file: UploadFile = File(...)):
             'data_emissao': '',
             'data_entrada': '',
             'cfop': '',
+            'numero_processo': '',
             'numero_po': '',
             'perc_reducao': '',
             'cod_importador': header.get('importer_code', ''),

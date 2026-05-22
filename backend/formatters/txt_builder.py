@@ -62,6 +62,21 @@ def _build_header_line(header_data: Dict, items_data: List[Dict]) -> str:
     total_val_icms  = sum(fw.safe_float(i.get('valor_icms_recolher')) for i in items_data)
     total_val_ipi   = sum(fw.safe_float(i.get('valor_ipi')) for i in items_data)
     total_base_ipi  = sum(fw.safe_float(i.get('base_ipi')) for i in items_data)
+    total_val_ii    = sum(fw.safe_float(i.get('valor_ii')) for i in items_data)
+    total_val_pis   = sum(fw.safe_float(i.get('valor_pis')) for i in items_data)
+    total_val_cofins = sum(fw.safe_float(i.get('valor_cofins')) for i in items_data)
+
+    # Field 39: full invoice total = merchandise + all taxes + freight + insurance
+    total_nota = (
+        total_merc
+        + total_val_ii
+        + total_val_ipi
+        + total_val_pis
+        + total_val_cofins
+        + total_val_icms
+        + fw.safe_float(header_data.get('valor_total_frete', 0))
+        + fw.safe_float(header_data.get('valor_total_seguro', 0))
+    )
 
     cfop = header_data.get('cfop') or '3101'
 
@@ -87,7 +102,7 @@ def _build_header_line(header_data: Dict, items_data: List[Dict]) -> str:
     # 10 Código do IPI (A, 3) — pos 053-055
     line += fw.format_alpha("", 3)
     # 11 Número do Processo (A, 17) — pos 056-072
-    line += fw.format_alpha("", 17)
+    line += fw.format_alpha(header_data.get('numero_processo', ''), 17)
     # 12 Quantidade de Itens (N, 2) — pos 073-074
     line += fw.format_int(len(items_data), 2)
     # 13 Data de Referência (N, 6) — pos 075-080
@@ -143,7 +158,7 @@ def _build_header_line(header_data: Dict, items_data: List[Dict]) -> str:
     # 38 Valor Total da Mercadoria (N, 15, 2) — pos 247-261
     line += fw.format_num(total_merc, 15, 2)
     # 39 Valor Total da Nota (N, 15, 2) — pos 262-276
-    line += fw.format_num(total_merc, 15, 2)
+    line += fw.format_num(total_nota, 15, 2)
     # 40 Valor Base do IPI (N, 15, 2) — pos 277-291
     line += fw.format_num(total_base_ipi, 15, 2)
     # 41 Filler (A, 2) — pos 292-293
@@ -159,7 +174,7 @@ def _build_header_line(header_data: Dict, items_data: List[Dict]) -> str:
     # 46 Número da DUIMP (A, 15) — pos 381-395  [NEW]
     line += fw.format_alpha(header_data.get('duimp_number', ''), 15)
     # 47 Versão do Registro (A, 4) — pos 396-399  [NEW]
-    line += fw.format_alpha(header_data.get('versao_registro', ''), 4)
+    line += fw.format_alpha(header_data.get('versao_registro') or '0001', 4)
 
     return line
 
@@ -189,7 +204,7 @@ def _build_item_line(item: Dict, note_num: str) -> str:
     # 05 Número do Lançamento (N, 6) — pos 015-020
     line += fw.format_int("", 6)
     # 06 Classificação Fiscal / NCM (N, 10) — pos 021-030
-    line += fw.format_alpha(ncm[:8], 10)
+    line += fw.format_int(ncm[:8], 10)
     # 07 Código do Produto (A, 20) — pos 031-050
     line += fw.format_alpha(internal, 20)
     # 08 Código - Trib. - ICMS (N, 1) — pos 051
@@ -213,7 +228,7 @@ def _build_item_line(item: Dict, note_num: str) -> str:
     # 17 Descrição do Produto (A, 150) — pos 111-260
     line += fw.format_alpha(f"{internal} - {desc}", 150)
     # 18 Valor Fob R$ (N, 15, 2) — pos 261-275
-    line += fw.format_num(tval, 15, 2)
+    line += fw.format_num(item.get('fob_reais', 0), 15, 2)
     # 19 Valor Frete R$ (N, 15, 2) — pos 276-290
     line += fw.format_num(frete, 15, 2)
     # 20 Valor do Seguro R$ (N, 15, 2) — pos 291-305
@@ -225,7 +240,7 @@ def _build_item_line(item: Dict, note_num: str) -> str:
     # 23 Valor Despesas (N, 15, 2) — pos 326-340
     line += fw.format_num(0, 15, 2)
     # 24 Nro Processo no Easy (A, 17) — pos 341-357
-    line += fw.format_alpha(item.get('di_number', ''), 17)
+    line += fw.format_alpha(item.get('numero_processo', ''), 17)
     # 25 Numero da EX da NCM (A, 3) — pos 358-360
     line += fw.format_alpha("", 3)
     # 26 Numero da Invoice (A, 15) — pos 361-375
@@ -235,11 +250,11 @@ def _build_item_line(item: Dict, note_num: str) -> str:
     # 28 Peso Líquido do item (N, 11, 4) — pos 391-401
     line += fw.format_num(item.get('net_weight', 0), 11, 4)
     # 29 Item do Pedido de Compra (C, 4) — pos 402-405
-    line += fw.format_alpha("", 4)
+    line += fw.format_alpha(item.get('item_pedido_compra', ''), 4)
     # 30 Alíquota de II (N, 5, 2) — pos 406-410
     line += fw.format_num(item.get('aliq_ii', 0), 5, 2)
     # 31 Numero do pedido (C, 17) — pos 411-427
-    line += fw.format_alpha("", 17)
+    line += fw.format_alpha(item.get('numero_pedido', ''), 17)
     # 32 Nro do Pedido de Licenciamento (C, 10) — pos 428-437
     line += fw.format_alpha(li_num, 10)
     # 33 Série da Nota Fiscal (C, 3) — pos 438-440
@@ -247,7 +262,7 @@ def _build_item_line(item: Dict, note_num: str) -> str:
     # 34 Base de ICMS por item (N, 15, 2) — pos 441-455
     line += fw.format_num(item.get('base_icms', 0), 15, 2)
     # 35 Valor FOB na moeda de Origem (N, 15, 7) — pos 456-470
-    line += fw.format_num(tval, 15, 7)
+    line += fw.format_num(item.get('fob_currency', 0), 15, 7)
     # 36 Alíquota do PIS (N, 6, 2) — pos 471-476
     line += fw.format_num(item.get('aliq_pis', 0), 6, 2)
     # 37 Vlr por qtde do PIS (N, 9, 2) — pos 477-485
@@ -307,5 +322,5 @@ def build_txt_content(header_data: Dict, items_data: List[Dict]) -> str:
     for item in items_data:
         lines.append(_build_item_line(item, note_num))
 
-    # CHR(13) = \r per TOTVS SIGAEIC spec
-    return "\r".join(lines)
+    # CHR(13) = \r terminates each record per TOTVS SIGAEIC spec
+    return "\r".join(lines) + "\r"
