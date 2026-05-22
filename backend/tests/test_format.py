@@ -52,12 +52,12 @@ for idx, line in enumerate(lines):
     print(f"Line {idx+1}: length={len(line)}, type={line[0] if line else 'empty'}")
 
 print()
-print("Expected: Header=380, Item=696")
+print("Expected: Header=399, Item=716")
 print()
 
 # Validate lengths
-header_ok = len(lines[0]) == 380
-item_ok = all(len(line) == 696 for line in lines[1:] if line)
+header_ok = len(lines[0]) == 399
+item_ok = all(len(line) == 716 for line in lines[1:] if line)
 
 print(f"Header length OK: {header_ok} (got {len(lines[0])})")
 if lines[1:]:

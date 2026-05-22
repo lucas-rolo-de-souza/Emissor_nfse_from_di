@@ -359,11 +359,37 @@ def parse_di_xml(xml_content: bytes) -> Tuple[Dict[str, Any], List[Dict[str, Any
                 'generated_internal_code': extracted_code # Store for later usage
             })
 
+        # --- LI Registration Code extraction ---
+        # licencasImportacao node may contain one or more LI registration numbers
+        lis_raw = adicao.get('licencasImportacao', adicao.get('licencaImportacao', []))
+        if isinstance(lis_raw, dict):
+            lis_raw = [lis_raw]
+        codigo_li = ''
+        codigo_li_substitutiva = ''
+        if lis_raw:
+            first_li = lis_raw[0] if isinstance(lis_raw, list) else lis_raw
+            codigo_li = (
+                get_text(first_li, 'numeroRegistro')
+                or get_text(first_li, 'codigoRegistroLicenca')
+                or get_text(first_li, 'numeroLicenca')
+                or ''
+            )
+            if len(lis_raw) > 1:
+                second_li = lis_raw[1]
+                codigo_li_substitutiva = (
+                    get_text(second_li, 'numeroRegistro')
+                    or get_text(second_li, 'codigoRegistroLicenca')
+                    or get_text(second_li, 'numeroLicenca')
+                    or ''
+                )
+
         # --- Construct Adicao Data ---
         adicao_data = {
             'number': adicao_number,
             'ncm': get_text(adicao, 'dadosMercadoriaCodigoNcm'),
             'li_number': get_text(adicao, 'numeroLI'),
+            'codigo_li': codigo_li,
+            'codigo_li_substitutiva': codigo_li_substitutiva,
             'net_weight': sanitize_decimal(adicao.get('dadosMercadoriaPesoLiquido'), 5),
             'gross_weight': 0.0, # Not explicit in Adicao usually
             
