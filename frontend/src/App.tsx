@@ -8,7 +8,7 @@ import { TxtViewerStep } from "./components/TxtViewerStep";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ExtractedData } from "./types";
 
-const API_BASE = "http://localhost:8000";
+const API_BASE = "http://localhost:8005";
 
 function App() {
   const [step, setStep] = useState<

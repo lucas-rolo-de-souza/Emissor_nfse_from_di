@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
-import type { ExtractedData, HeaderData, AdicaoData, ItemData } from "../types";
+import type { ExtractedData, HeaderData, ItemData } from "../types";
 import {
   HEADER_LABELS,
   REQUIRED_HEADER_FIELDS,

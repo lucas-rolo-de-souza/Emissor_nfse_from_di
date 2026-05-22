@@ -111,7 +111,7 @@ export function TxtViewerStep({ onBack }: TxtViewerStepProps) {
       const formData = new FormData();
       formData.append("txt_file", file);
 
-      const response = await fetch("http://localhost:8000/parse-txt", {
+      const response = await fetch("http://localhost:8005/parse-txt", {
         method: "POST",
         body: formData,
       });

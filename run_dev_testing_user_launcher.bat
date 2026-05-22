@@ -20,7 +20,7 @@ REM    npm install
 REM ------------------------------------------------------------------
 
 echo Starting Backend Server...
-start "Backend" cmd /k "python -m uvicorn backend.app:app --reload"
+start "Backend" cmd /k "python -m uvicorn backend.app:app --reload --port 8005"
 
 echo Starting Frontend Server...
 start "Frontend" cmd /k "cd frontend && npm run dev"
@@ -35,7 +35,7 @@ echo.
 echo ==================================================================
 echo   Your development environment is up and running!
 echo.
-echo   - Backend API:   http://localhost:8000
+echo   - Backend API:   http://localhost:8005
 echo   - Frontend App:  http://localhost:5173
 echo ==================================================================
 echo.
