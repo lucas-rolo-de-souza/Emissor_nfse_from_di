@@ -66,13 +66,11 @@ function NumInput({ value, onChange, placeholder }: { value: number; onChange: (
 
 function AdicaoForm({
   adicao,
-  index,
   onUpdate,
   onRemove,
   canRemove,
 }: {
   adicao: AdicaoData;
-  index: number;
   onUpdate: (updated: AdicaoData) => void;
   onRemove: () => void;
   canRemove: boolean;
@@ -241,7 +239,6 @@ export function StepAdicoes({ adicoes, onChange }: StepAdicoesProps) {
         <div key={idx}>
           <AdicaoForm
             adicao={adicao}
-            index={idx}
             onUpdate={(u) => updateAdicao(idx, u)}
             onRemove={() => removeAdicao(idx)}
             canRemove={adicoes.length > 1}

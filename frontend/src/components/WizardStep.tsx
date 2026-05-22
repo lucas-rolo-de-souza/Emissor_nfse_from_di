@@ -153,7 +153,6 @@ export function WizardStep({ onGenerate, onBack, isLoading }: WizardStepProps) {
     onGenerate(data);
   };
 
-  const canGoBack = phase > 0;
   const goBack = () => {
     if (phase === 0) { onBack(); return; }
     setPhase((p) => (p - 1) as WizardPhase);

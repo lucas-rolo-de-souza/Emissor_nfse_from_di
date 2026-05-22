@@ -26,13 +26,11 @@ function emptyItem(sequence: string): ItemData {
 
 function ItemRow({
   item,
-  itemIdx,
   onUpdate,
   onRemove,
   canRemove,
 }: {
   item: ItemData;
-  itemIdx: number;
   onUpdate: (updated: ItemData) => void;
   onRemove: () => void;
   canRemove: boolean;
@@ -124,11 +122,9 @@ function ItemRow({
 
 function AdicaoItemsSection({
   adicao,
-  adicaoIdx,
   onUpdate,
 }: {
   adicao: AdicaoData;
-  adicaoIdx: number;
   onUpdate: (updated: AdicaoData) => void;
 }) {
   const addItem = () => {
@@ -171,7 +167,6 @@ function AdicaoItemsSection({
         <ItemRow
           key={itemIdx}
           item={item}
-          itemIdx={itemIdx}
           onUpdate={(u) => updateItem(itemIdx, u)}
           onRemove={() => removeItem(itemIdx)}
           canRemove={adicao.items.length > 1}
@@ -196,7 +191,6 @@ export function StepItens({ adicoes, onChange }: StepItensProps) {
         <div key={idx}>
           <AdicaoItemsSection
             adicao={adicao}
-            adicaoIdx={idx}
             onUpdate={(u) => updateAdicao(idx, u)}
           />
           {idx < adicoes.length - 1 && <Separator className="mt-6" />}

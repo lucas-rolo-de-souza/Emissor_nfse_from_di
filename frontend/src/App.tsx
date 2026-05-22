@@ -9,7 +9,7 @@ import { WizardStep } from "./components/WizardStep";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ExtractedData } from "./types";
 
-const API_BASE = "http://localhost:8005";
+const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:8005";
 
 function App() {
   const [step, setStep] = useState<
