@@ -82,27 +82,30 @@ class AdicaoData(BaseModel):
     number: Optional[str] = None
     ncm: str
     li_number: Optional[str] = None
+    codigo_li: Optional[str] = None
+    codigo_li_substitutiva: Optional[str] = None
     net_weight: float
     gross_weight: float = 0.0
-    
+
     # Values
     fob_currency: float
     fob_reais: float
     freight_reais: float
     insurance_reais: float
-    
+
     # Complex Nested Data
     supplier: SupplierData
     incoterm: IncotermData
     logistics: LogisticsData
     taxes: TaxBreakdown
     nves: List[NVEData]
-    
+
     items: List[ItemData]
 
 class HeaderData(BaseModel):
     di_number: Optional[str] = None
     duimp_number: Optional[str] = None
+    versao_registro: Optional[str] = None
     di_date: Optional[str] = None
     exporter_name: Optional[str] = None
     exporter_city: Optional[str] = None
@@ -134,6 +137,64 @@ class ExtractedData(BaseModel):
 class GenerateRequest(BaseModel):
     header: HeaderData
     adicoes: List[AdicaoData]
+
+
+def _flatten_item(adicao: dict, item: dict, header_data: dict) -> dict:
+    return {
+        'adicao_number': adicao['number'],
+        'ncm': adicao['ncm'],
+        'description': item['description'],
+        'qty_commercial': item['qty'],
+        'unit_commercial': item['unit'],
+        'unit_value': item['unit_value'],
+        'total_value': item['unit_value'] * item['qty'],
+        'item_sequence': item['sequence'],
+        'net_weight': adicao['net_weight'],
+        'li_number': adicao['li_number'],
+        'frete_item': adicao['freight_reais'],
+        'seguro_item': adicao['insurance_reais'],
+        'invoice_number': header_data.get('invoice_number', ''),
+        'di_number': header_data.get('di_number', ''),
+        # II
+        'aliq_ii': adicao['taxes']['ii']['rate'],
+        'valor_ii': adicao['taxes']['ii']['value_due'],
+        'base_ii': adicao['taxes']['ii']['base_calc'],
+        # PIS
+        'aliq_pis': adicao['taxes']['pis']['rate'],
+        'base_pis': adicao['taxes']['pis']['base_calc'],
+        'valor_pis': adicao['taxes']['pis']['value_collect'],
+        'qtde_pis': item['qty'],
+        # COFINS
+        'aliq_cofins': adicao['taxes']['cofins']['rate'],
+        'base_cofins': adicao['taxes']['cofins']['base_calc'],
+        'valor_cofins': adicao['taxes']['cofins']['value_collect'],
+        'qtde_cofins': item['qty'],
+        # IPI
+        'aliq_ipi': adicao['taxes']['ipi']['rate'],
+        'valor_ipi': adicao['taxes']['ipi']['value_due'],
+        'base_ipi': adicao['taxes']['ipi']['base_calc'],
+        'aliq_esp_ipi': 0.0,
+        'qtde_ipi': item['qty'],
+        # ICMS
+        'aliq_icms': adicao['taxes']['icms']['rate'],
+        'base_icms': item['unit_value'] * item['qty'],
+        'valor_icms_recolher': adicao['taxes']['icms']['value_collect'],
+        # Costs
+        'valor_desconto': 0.0,
+        'valor_iof': 0.0,
+        'despesas_aduaneiras': 0.0,
+        # Logistics
+        'lote': '',
+        'validade': '',
+        'perc_dif_icms': 0.0,
+        # LI codes (new fields)
+        'codigo_li': adicao.get('codigo_li', ''),
+        'codigo_li_substitutiva': adicao.get('codigo_li_substitutiva', ''),
+        # User-provided
+        'internal_code': item['internal_code'],
+        'output_unit': item['output_unit'],
+        'cfop': item.get('cfop') or header_data.get('cfop'),
+    }
 
 
 @app.get("/")
@@ -175,11 +236,11 @@ async def extract_data(xml_file: UploadFile = File(...)):
             'numero_po': '',
             'perc_reducao': '',
             'cod_importador': header.get('importer_code', ''),
-            'cod_importador': header.get('importer_code', ''),
             'cod_transportador': header.get('transport_code', ''),
             'cod_exportador': header.get('exporter_name', ''),
             'invoice_number': header.get('invoice_number', ''),
             'duimp_number': header.get('duimp_number', ''),
+            'versao_registro': '',
             'provenance_country_code': header.get('provenance_country_code', ''),
         }
         
@@ -213,75 +274,11 @@ async def generate_txt(request: GenerateRequest):
             errors.append("Data Emissão is required")
         
         items_flat = []
-        for a_idx, adicao in enumerate(adicoes_data):
-            # Check for missing internal codes
-            for i_idx, item in enumerate(adicao['items']):
+        for adicao in adicoes_data:
+            for item in adicao['items']:
                 if not item.get('internal_code'):
                     errors.append(f"Adição {adicao['number']} - Item {item['sequence']}: Internal Code is required")
-                
-                # Flatten Structure for the TXT Builder
-                flattened_item = {
-                    'adicao_number': adicao['number'],
-                    'ncm': adicao['ncm'],
-                    'description': item['description'],
-                    'qty_commercial': item['qty'],
-                    'unit_commercial': item['unit'],
-                    'unit_value': item['unit_value'],
-                    'total_value': item['unit_value'] * item['qty'], 
-                    
-                    'item_sequence': item['sequence'],
-                    'net_weight': adicao['net_weight'], # Sharing weight across items? Or leave as adicao level
-                    'li_number': adicao['li_number'],
-                    'frete_item': adicao['freight_reais'], 
-                    'seguro_item': adicao['insurance_reais'],
-                    'invoice_number': header_data.get('invoice_number', ''),
-                    
-                    # --- Tax & Extra Fields ---
-                    # II
-                    'aliq_ii': adicao['taxes']['ii']['rate'],
-                    'valor_ii': adicao['taxes']['ii']['value_due'],
-                    'base_ii': adicao['taxes']['ii']['base_calc'],
-                    
-                    # PIS
-                    'aliq_pis': adicao['taxes']['pis']['rate'],
-                    'base_pis': adicao['taxes']['pis']['base_calc'],
-                    'valor_pis': adicao['taxes']['pis']['value_collect'],
-                    'qtde_pis': item['qty'],
-                    
-                    # COFINS
-                    'aliq_cofins': adicao['taxes']['cofins']['rate'],
-                    'base_cofins': adicao['taxes']['cofins']['base_calc'],
-                    'valor_cofins': adicao['taxes']['cofins']['value_collect'],
-                    'qtde_cofins': item['qty'],
-                    
-                    # IPI
-                    'aliq_ipi': adicao['taxes']['ipi']['rate'],
-                    'valor_ipi': adicao['taxes']['ipi']['value_due'],
-                    'base_ipi': adicao['taxes']['ipi']['base_calc'],
-                    'aliq_esp_ipi': 0.0, # Specific rate
-                    'qtde_ipi': item['qty'],
-                    
-                    # Costs
-                    'valor_desconto': 0.0,
-                    'valor_iof': 0.0,
-                    'despesas_aduaneiras': 0.0,
-                    
-                    # Logistics
-                    'lote': '',
-                    'validade': '',
-                    
-                    # ICMS
-                    # Base ICMS per item = Merchandise Value (Unit Value * Qty)
-                    'aliq_icms': adicao['taxes']['icms']['rate'], 
-                    'base_icms': item['unit_value'] * item['qty'],
-                    'valor_icms_recolher': adicao['taxes']['icms']['value_collect'],
-                    
-                    # User fields
-                    'internal_code': item['internal_code'],
-                    'output_unit': item['output_unit'],
-                    'cfop': item.get('cfop') or header_data.get('cfop')
-                }
-                items_flat.append(flattened_item)
+                items_flat.append(_flatten_item(adicao, item, header_data))
         
         if errors:
             raise HTTPException(status_code=422, detail={"errors": errors})

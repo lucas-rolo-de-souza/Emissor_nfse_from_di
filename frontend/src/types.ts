@@ -66,6 +66,8 @@ export interface AdicaoData {
   number: string;
   ncm: string;
   li_number: string;
+  codigo_li?: string;
+  codigo_li_substitutiva?: string;
   net_weight: number;
   gross_weight: number;
 
@@ -89,6 +91,7 @@ export interface HeaderData {
   // From XML
   di_number: string;
   duimp_number?: string;
+  versao_registro?: string;
   di_date: string;
   exporter_name: string;
   exporter_city: string;
@@ -139,8 +142,13 @@ export const isRequiredItemField = (field: keyof ItemData): boolean =>
 // Labels for display
 export const HEADER_LABELS: Partial<Record<keyof HeaderData, string>> = {
   di_number: "Número DI",
+  duimp_number: "Número DUIMP",
   di_date: "Data DI",
   exporter_name: "Exportador",
+  exporter_country: "País Exportador",
+  provenance_country_code: "País Procedência",
+  urf_entry: "URF de Entrada",
+  transport_via: "Via de Transporte",
   numero_nota: "Número da Nota *",
   data_emissao: "Data Emissão *",
   data_entrada: "Data Entrada *",
@@ -149,6 +157,7 @@ export const HEADER_LABELS: Partial<Record<keyof HeaderData, string>> = {
   cod_importador: "Cód. Importador",
   cod_transportador: "Cód. Transportador",
   cod_exportador: "Cód. Exportador",
+  invoice_number: "Número Invoice",
 };
 
 export const ITEM_LABELS: Partial<Record<keyof ItemData, string>> = {

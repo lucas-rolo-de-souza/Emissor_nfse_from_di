@@ -5,6 +5,7 @@ import { UploadStep } from "./components/UploadStep";
 import { ReviewStep } from "./components/ReviewStep";
 import { ReportStep } from "./components/ReportStep";
 import { TxtViewerStep } from "./components/TxtViewerStep";
+import { WizardStep } from "./components/WizardStep";
 import { AnimatePresence, motion } from "framer-motion";
 import type { ExtractedData } from "./types";
 
@@ -12,7 +13,7 @@ const API_BASE = "http://localhost:8000";
 
 function App() {
   const [step, setStep] = useState<
-    "landing" | "upload" | "review" | "report" | "viewer"
+    "landing" | "upload" | "review" | "report" | "viewer" | "wizard"
   >("landing");
   const [report, setReport] = useState<{
     status: "success" | "error";
@@ -57,6 +58,41 @@ function App() {
       const message =
         e instanceof Error ? e.message : "Network error during extraction.";
       setReport({ status: "error", message });
+      setStep("report");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Generate TXT from wizard-created data
+  const handleGenerateFromWizard = async (data: ExtractedData) => {
+    setExtractedData(data);
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const contentDisposition = response.headers.get("content-disposition");
+        let filename = "nota_fiscal.txt";
+        if (contentDisposition) {
+          const match = contentDisposition.match(/filename="?([^"]+)"?/);
+          if (match?.[1]) filename = match[1];
+        }
+        setReport({ status: "success", message: `Arquivo "${filename}" gerado com sucesso.`, downloadUrl: url, filename });
+        setStep("report");
+      } else {
+        const err = await response.json() as { detail?: { errors?: string[] } | string };
+        const msg = typeof err.detail === "object" && err.detail?.errors ? err.detail.errors.join("\n") : String(err.detail || "Erro ao gerar TXT");
+        setReport({ status: "error", message: msg });
+        setStep("report");
+      }
+    } catch (e) {
+      setReport({ status: "error", message: e instanceof Error ? e.message : "Erro de rede." });
       setStep("report");
     } finally {
       setIsLoading(false);
@@ -139,6 +175,7 @@ function App() {
             <LandingStep
               onStart={() => setStep("upload")}
               onViewTxt={() => setStep("viewer")}
+              onCreateFromScratch={() => setStep("wizard")}
             />
           </motion.div>
         )}
@@ -204,6 +241,23 @@ function App() {
             className="w-full flex justify-center"
           >
             <TxtViewerStep onBack={() => setStep("landing")} />
+          </motion.div>
+        )}
+
+        {step === "wizard" && (
+          <motion.div
+            key="wizard"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.3 }}
+            className="w-full flex justify-center"
+          >
+            <WizardStep
+              onGenerate={handleGenerateFromWizard}
+              onBack={() => setStep("landing")}
+              isLoading={isLoading}
+            />
           </motion.div>
         )}
       </AnimatePresence>
