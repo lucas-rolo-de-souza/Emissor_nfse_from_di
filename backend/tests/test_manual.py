@@ -7,9 +7,10 @@ import io
 from backend.services.processor import process_file_data
 
 def test_manual():
-    # 1. Load Real XML
-    # Path relative to where we run the command (project root)
-    with open('format_guidelines/Eletra.xml', 'rb') as f:
+    from pathlib import Path
+    base_dir = Path(__file__).resolve().parent.parent.parent
+    xml_path = base_dir / "format_guidelines" / "Eletra.xml"
+    with open(xml_path, 'rb') as f:
         xml_content = f.read()
         
     # 2. Create Mock Excel

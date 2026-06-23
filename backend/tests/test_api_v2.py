@@ -72,7 +72,8 @@ def _make_adicao(ncm="85044021", internal_code="PROD-001"):
 def _make_header(**overrides):
     base = {
         "di_number": "2200000001",
-        "di_date": "20/01/2025",
+        "di_date": "20250120",
+        "numero_processo": "PROC-001",
         "exporter_name": "TEST EXPORTER LTD",
         "valor_total_frete": 150.0,
         "valor_total_seguro": 50.5,

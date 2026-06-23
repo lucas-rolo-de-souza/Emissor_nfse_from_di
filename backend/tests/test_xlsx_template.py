@@ -1,113 +1,67 @@
-
-import sys
-import os
 import io
-import pandas as pd
-from openpyxl import load_workbook
+from pathlib import Path
 
-# Add project root to path to allow 'from backend.services ...'
-sys.path.append(os.getcwd())
+from openpyxl import load_workbook
+import pytest
 
 from backend.services.generator import generate_template
 from backend.services.processor import process_file_data
+from backend.parsers.txt_parser import parse_txt_content
 
-def test_template_flow():
-    print("1. Generating Template...")
+pytestmark = pytest.mark.compliance
+
+
+def test_template_flow_generates_compliant_txt():
     template_buffer = generate_template()
-    
-    # Save for manual inspection if needed
-    with open("test_template.xlsx", "wb") as f:
-        f.write(template_buffer.getbuffer())
-    
-    print("2. Filling Template Mock Data...")
     wb = load_workbook(template_buffer)
-    
-    # Fill Header
-    ws_header = wb['Cabecalho']
-    # Headers are in row 1, data in row 2
-    ws_header.append([
-        "123456",           # Numero da Nota
-        "22/01/2026",       # Data Emissao
-        "23/01/2026",       # Data Entrada
-        "150.00",           # Frete
-        "50.50",            # Seguro
-        "TEST EXPORTER LTD" # Exportador
-    ])
-    
-    # Fill Items (Mapping)
-    ws_items = wb['Itens']
-    # NCM "85044021" is a common one, ensure it matches xml
-    ws_items.append([
-        "85044021",         # NCM
-        "Desc Test", 
-        "PROD-001",         # Internal Code
-        "UN",               # Unit
-        "3102"              # CFOP
-    ])
-    
-    # Save populated xlsx
+
+    ws_header = wb["Cabecalho"]
+    header_vals = [
+        "123456",
+        "22/01/2026",
+        "23/01/2026",
+        "3101",
+        "PO-999",
+        "0.00",
+        "IMP-001",
+        "TRA-002",
+        "TEST EXPORTER LTD",
+    ]
+    for col_idx, val in enumerate(header_vals, start=1):
+        ws_header.cell(row=2, column=col_idx, value=val)
+
+    ws_items = wb["Itens"]
+    item_rows = [
+        ["85044090", "Desc Test", "PROD-001", "UN", "3101"],
+        ["85176272", "Desc Test 2", "PROD-002", "UN", "3101"],
+        ["85367000", "Desc Test 3", "PROD-003", "UN", "3101"],
+        ["90283031", "Desc Test 4", "PROD-004", "UN", "3101"],
+    ]
+    for row_idx, row_vals in enumerate(item_rows, start=2):
+        for col_idx, val in enumerate(row_vals, start=1):
+            ws_items.cell(row=row_idx, column=col_idx, value=val)
+
     input_xlsx = io.BytesIO()
     wb.save(input_xlsx)
     input_xlsx.seek(0)
-    
-    print("3. Creating Mock XML...")
-    xml_content = b"""
-    <ListaDeclaracoes>
-        <declaracaoImportacao>
-            <numeroDI>2200000001</numeroDI>
-            <dataRegistro>20/01/2025</dataRegistro>
-            <adicao>
-                <numeroAdicao>001</numeroAdicao>
-                <dadosMercadoriaCodigoNcm>85044021</dadosMercadoriaCodigoNcm>
-                <dadosMercadoriaMedidaEstatisticaQuantidade>10</dadosMercadoriaMedidaEstatisticaQuantidade>
-                <mercadoria>
-                    <descricaoMercadoria>SENSOR INDUCTIVE</descricaoMercadoria>
-                    <quantidade>10</quantidade>
-                    <unidadeMedida>UN</unidadeMedida>
-                    <valorUnitario>5.00</valorUnitario>
-                    <valorTotalCondicaoVenda>50.00</valorTotalCondicaoVenda>
-                </mercadoria>
-            </adicao>
-        </declaracaoImportacao>
-    </ListaDeclaracoes>
-    """
-    
-    print("4. Processing...")
-    try:
-        txt_output = process_file_data(xml_content, input_xlsx.getvalue())
-        print("   Success! Output length:", len(txt_output))
-        
-        print("5. Validating Output Content...")
-        lines = txt_output.split('\n')
-        header_line = lines[0]
-        
-        # Check Note Number (Pos 006-014 -> index 5-14)
-        note_num = header_line[5:14]
-        print(f"   Note Number: '{note_num}' (Expected '000123456')")
-        assert note_num == "000123456"
-        
-        # Check Exporter (Pos 298-357 -> index 297-357)
-        # 43 Nome Exportador
-        # Pos is 298. 298-1 = 297 index.
-        exporter = header_line[297:357].strip()
-        print(f"   Exporter: '{exporter}' (Expected 'TEST EXPORTER LTD')")
-        assert "TEST EXPORTER LTD" in exporter
-        
-        # Check Dates (Emissao 14: 081-088 -> 80-88)
-        # Entry 15: 089-096 -> 88-96
-        dt_emissao = header_line[80:88]
-        print(f"   Dt Emissao: '{dt_emissao}' (Expected '22012026')")
-        assert dt_emissao == "22012026"
 
-        print("   \nAll checks passed!")
-        
-        with open("test_output.txt", "w") as f:
-            f.write(txt_output)
-            
-    except Exception as e:
-        print(f"   FAILED: {e}")
-        import traceback
-        traceback.print_exc()
+    base_dir = Path(__file__).resolve().parent.parent.parent
+    xml_path = base_dir / "format_guidelines" / "Eletra.xml"
+    xml_content = xml_path.read_bytes()
 
-if __name__ == "__main__":
-    test_template_flow()
+    txt_output = process_file_data(xml_content, input_xlsx.getvalue())
+    assert txt_output.endswith("\r\n")
+
+    lines = txt_output.splitlines()
+    assert lines
+    assert len(lines[0]) == 380
+    assert all(len(line) == 717 for line in lines[1:])
+
+    header_line = lines[0]
+    assert header_line[5:14] == "000123456"
+    assert header_line[80:88] == "20260122"
+    assert header_line[297:357].strip()
+
+    parsed_header, parsed_items = parse_txt_content(txt_output.encode("utf-8"))
+    assert parsed_header["numero_nota"] == "123456"
+    assert parsed_items

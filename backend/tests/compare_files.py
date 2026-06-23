@@ -1,8 +1,10 @@
 """Compare two TXT files to find layout differences."""
 
-# Read both example files
-file1_path = r'z:\Github\My Projects\Emissor_nfse_from_di\format_guidelines\021C-2025 - ESPELHO DE NF txt.txt'
-file2_path = r'z:\Github\My Projects\Emissor_nfse_from_di\format_guidelines\nota_fiscal_1.txt'
+from pathlib import Path
+
+root_dir = Path(__file__).resolve().parent.parent.parent
+file1_path = root_dir / 'format_guidelines' / '021C-2025 - ESPELHO DE NF txt.txt'
+file2_path = root_dir / 'format_guidelines' / 'nota_fiscal_1.txt'
 
 with open(file1_path, 'rb') as f:
     content1 = f.read()

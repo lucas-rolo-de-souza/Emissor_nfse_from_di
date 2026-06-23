@@ -1,8 +1,12 @@
 import sys
-sys.path.insert(0, r'z:\Github\My Projects\Emissor_nfse_from_di')
+from pathlib import Path
+
+root_dir = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(root_dir))
+
 from backend.parsers.xml_parser import parse_di_xml
 
-with open(r'z:\Github\My Projects\Emissor_nfse_from_di\format_guidelines\Eletra.xml', 'rb') as f:
+with open(root_dir / 'format_guidelines' / 'Eletra.xml', 'rb') as f:
     xml_content = f.read()
 
 header, adicoes = parse_di_xml(xml_content)

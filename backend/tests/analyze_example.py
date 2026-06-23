@@ -1,6 +1,11 @@
 """Analyze the example output file to understand the format."""
 
-with open(r'z:\Github\My Projects\Emissor_nfse_from_di\format_guidelines\021C-2025 - ESPELHO DE NF txt.txt', 'rb') as f:
+from pathlib import Path
+
+root_dir = Path(__file__).resolve().parent.parent.parent
+example_path = root_dir / 'format_guidelines' / '021C-2025 - ESPELHO DE NF txt.txt'
+
+with open(example_path, 'rb') as f:
     content = f.read()
 
 # According to layout: Line Delimiter is CR (CHR(13) only)
