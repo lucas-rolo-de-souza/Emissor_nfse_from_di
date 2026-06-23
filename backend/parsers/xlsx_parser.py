@@ -33,10 +33,17 @@ def parse_mapping_xlsx(xlsx_content: bytes) -> Tuple[Dict[str, Dict[str, Any]], 
         if not ncm or ncm.lower() == 'nan':
             continue
             
+        def get_col_val(col_names: list) -> str:
+            for col in col_names:
+                if col in row:
+                    val = row[col]
+                    return str(val).strip() if pd.notna(val) else ""
+            return ""
+
         mapping[ncm] = {
-            "internal_code": str(row.get("Codigo Produto Interno (Obrigatorio)", "")).strip(),
-            "output_unit": str(row.get("Unidade Saida (Opcional)", "")).strip(),
-            "cfop": str(row.get("CFOP (Obrigatorio)", "")).strip()
+            "internal_code": get_col_val(["Codigo Produto Interno (Obrigatorio)", "Codigo Produto Interno"]),
+            "output_unit": get_col_val(["Unidade Saida (Opcional)", "Unidade Saida"]),
+            "cfop": get_col_val(["CFOP (Obrigatorio)", "CFOP"])
         }
 
     # --- Parse Header ---
@@ -58,10 +65,17 @@ def parse_mapping_xlsx(xlsx_content: bytes) -> Tuple[Dict[str, Dict[str, Any]], 
                 "data_entrada": get_val("Data Entrada (DD/MM/AAAA)"),
                 "cfop": get_val("CFOP Predominante (Obrigatorio)"),
                 "numero_po": get_val("Numero do PO (Opcional)"),
+                "numero_pedido": get_val("Numero do Pedido Easy (Opcional)"),
+                "especie": get_val("Especie NF (Opcional)"),
+                "serie": get_val("Serie NF (Opcional)"),
                 "perc_reducao": get_val("Perc Reducao ICMS (Opcional)"),
                 "cod_importador": get_val("Codigo Importador (Opcional)"),
                 "cod_transportador": get_val("Codigo Transportador (Opcional)"),
                 "cod_exportador": get_val("Codigo Exportador (Opcional)"),
+                "mv_eic0010_source": get_val("MV_EIC0010 Origem ICMS (HEADER/ITEMS)") or "ITEMS",
+                "aliq_icms_capa": get_val("Aliq ICMS CAPA (Opcional)"),
+                "mv_eic0076_mode": get_val("MV_EIC0076 Modo (STANDARD_15/FIELD_WIDTH)") or "STANDARD_15",
+                "uf_emitente": get_val("UF Emitente (Opcional)") or "AM",
                 # Compat with older template versions if needed, but we prioritize the new names
                 "valor_frete": get_val("Valor Frete Total (Opcional)"),
                 "valor_seguro": get_val("Valor Seguro Total (Opcional)"),

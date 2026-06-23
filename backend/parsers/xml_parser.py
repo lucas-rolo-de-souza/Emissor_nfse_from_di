@@ -124,6 +124,7 @@ def parse_di_xml(xml_content: bytes) -> Tuple[Dict[str, Any], List[Dict[str, Any
         # Importer
         'importer_code': get_text(root, 'importadorNumero'), 
         'importer_name': get_text(root, 'importadorNome'),
+        'importer_uf': get_text(root, 'importadorEnderecoUf'),
         # Exporter (Assume from first adicao if not in root, usually DI has one exporter per DI)
         'exporter_name': get_text(first_adicao, 'fornecedorNome'),
         'exporter_city': get_text(first_adicao, 'fornecedorCidade'),
@@ -387,9 +388,9 @@ def parse_di_xml(xml_content: bytes) -> Tuple[Dict[str, Any], List[Dict[str, Any
         adicao_data = {
             'number': adicao_number,
             'ncm': get_text(adicao, 'dadosMercadoriaCodigoNcm'),
-            'li_number': get_text(adicao, 'numeroLI'),
-            'codigo_li': codigo_li,
-            'codigo_li_substitutiva': codigo_li_substitutiva,
+            'li_number': get_text(adicao, 'numeroLI').replace('*', ''),
+            'codigo_li': codigo_li.replace('*', ''),
+            'codigo_li_substitutiva': codigo_li_substitutiva.replace('*', ''),
             'net_weight': sanitize_decimal(adicao.get('dadosMercadoriaPesoLiquido'), 5),
             'gross_weight': 0.0, # Not explicit in Adicao usually
             

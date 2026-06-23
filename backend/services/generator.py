@@ -70,6 +70,7 @@ def generate_template() -> io.BytesIO:
         "G1": ("Codigo Importador (Opcional)", "Código do Importador no sistema destino."),
         "H1": ("Codigo Transportador (Opcional)", "Código do Transportador no sistema destino."),
         "I1": ("Codigo Exportador (Opcional)", "Código do Exportador no sistema destino."),
+        "J1": ("UF Emitente (Opcional)", "UF do Emitente no cabeçalho (campo 29). Padrão 'AM'."),
     }
     
     for cell, (title, comment_text) in headers_cabecalho.items():
@@ -81,7 +82,7 @@ def generate_template() -> io.BytesIO:
         ws_header.column_dimensions[cell[0]].width = 25
 
     # Example Row
-    example_header = ["12345", "23/01/2026", "24/01/2026", "3101", "PO-999", "0.00", "IMP-001", "TRA-002", "EXP-003"]
+    example_header = ["12345", "23/01/2026", "24/01/2026", "3101", "PO-999", "0.00", "IMP-001", "TRA-002", "EXP-003", "AM"]
     ws_header.append(example_header)
     for cell in ws_header[2]:
         cell.font = example_font
