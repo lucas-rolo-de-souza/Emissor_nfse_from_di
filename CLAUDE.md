@@ -74,8 +74,8 @@ When the DI XML contains zero values for taxes, the backend recalculates from ra
 
 ### Fixed-Width TXT Layout
 The output TXT has exactly two record types:
-- **Header record**: 380 characters
-- **Item record**: 688 characters
+- **Header record**: 399 characters (or 380 in legacy format)
+- **Item record**: 717 characters (or 697 in legacy format)
 
 Field positions, numeric formatting (with `.`), alphanumeric padding (spaces), and date formats (`DDMMAA` vs `AAAAMMDD`) vary per field. Full spec: `format_guidelines/NOTA_FISCAL_2_CONTEXT.md`.
 

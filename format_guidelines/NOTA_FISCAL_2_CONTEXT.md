@@ -7,11 +7,11 @@
 ## 1. File Structure
 
 - **Format:** ASCII Text (Fixed Width).
-- **Line Delimiter:** CHR(13) — CR only (Carriage Return, `\r`).
+- **Line Delimiter:** CR + LF (Carriage Return + Line Feed, `\r\n`). Legacy integrations might accept or use CR only (`\r`), but CRLF is the verified standard.
 - **Separators:** None (Continuous fields).
 - **Record Types:**
-  - **Header (Capa):** Identified by `Tipo = "1"` at position 1. **Total length: 399 characters.**
-  - **Item (Detalhe):** Identified by `Tipo = "2"` at position 1. **Total length: 716 characters.**
+  - **Header (Capa):** Identified by `Tipo = "1"` at position 1. **Standard length: 399 characters.** A legacy variant omitting the optional DUIMP and Versão fields has a length of **380 characters**.
+  - **Item (Detalhe):** Identified by `Tipo = "2"` at position 1. **Standard length: 717 characters.** A legacy variant omitting the optional LI fields has a length of **697 characters**.
 
 ## 2. Formatting Rules
 
@@ -32,6 +32,15 @@
 
 - **Format:** `AAAAMMDD` (e.g., 2025-08-20 → `20250820`).
 - Date fields send as zero-padded numeric string.
+
+### 2.4 Encoding & Character Sanitization
+
+- **Encoding:** Must be **UTF-8 (without BOM)**.
+- **Line Endings:** Must use **CRLF (`\r\n`)** as the line separator.
+- **Accent Stripping:** Accents, diacritics, and special characters (e.g., `á`, `ç`, `ê`) are strictly prohibited in text fields (such as `Descrição do Produto`). They must be stripped/transliterated to their closest ASCII equivalents (e.g., `a`, `c`, `e`) rather than failing the build.
+- **Sanitization Logic:**
+  - Characters should be normalized using Unicode decomposition (e.g., in Python: `unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('ascii')`).
+  - Text fields must contain only clean, ASCII-compatible text to prevent parsing, database, or SQL query injection/malformation issues.
 
 ## 3. Layout Definitions
 
@@ -87,7 +96,7 @@
 | **46** | **Número da DUIMP**         |**A** |**015**|**-**|**381-395**| **NEW** — não obrigatório    |
 | **47** | **Versão do Registro**      |**A** |**004**|**-**|**396-399**| **NEW** — não obrigatório    |
 
-### 3.2 Items (Detalhe) — Type "2" — 716 characters
+### 3.2 Items (Detalhe) — Type "2" — 717 characters
 
 | Seq | Description                    | Type | Size | Dec | Position | Notes                          |
 | :-: | :----------------------------- | :--: | :--: | :-: | :------: | :----------------------------- |
@@ -101,55 +110,55 @@
 | 08  | Código - Trib. - ICMS          |  N   | 001  |  -  | 051-051  | Unused                         |
 | 09  | Código - Trib. - IPI           |  N   | 001  |  -  | 052-052  | Unused                         |
 | 10  | Número do Item                 |  N   | 002  |  -  | 053-054  | Unused                         |
-| 11  | Quantidade                     |  N   | 011  | 04  | 055-065  | Mandatory                      |
-| 12  | Unidade                        |  A   | 003  |  -  | 066-068  | Unused (uses Easy unit)        |
-| 13  | Vlr. - IPI                     |  N   | 015  | 02  | 069-083  |                                |
-| 14  | Valor Mercadoria (CIF+II)      |  N   | 015  | 02  | 084-098  | Mandatory                      |
-| 15  | Flag de Entrada                |  A   | 001  |  -  | 099-099  | Fixed "I"                      |
-| 16  | Quantidade do Recebimento      |  N   | 011  | 04  | 100-110  | Unused                         |
-| 17  | Descrição do Produto           |  A   | 150  |  -  | 111-260  |                                |
-| 18  | Valor Fob R$                   |  N   | 015  | 02  | 261-275  | Mandatory                      |
-| 19  | Valor Frete R$                 |  N   | 015  | 02  | 276-290  | Item freight                   |
-| 20  | Valor do Seguro R$             |  N   | 015  | 02  | 291-305  | Item insurance                 |
-| 21  | Valor II R$                    |  N   | 015  | 02  | 306-320  | Import Duty value              |
-| 22  | Alíquota IPI                   |  N   | 005  | 02  | 321-325  |                                |
-| 23  | Valor Despesas                 |  N   | 015  | 02  | 326-340  | Other expenses                 |
-| 24  | Nro Processo no Easy           |  A   | 017  |  -  | 341-357  | Mandatory                      |
-| 25  | Numero da EX da NCM            |  A   | 003  |  -  | 358-360  | NCM exception                  |
-| 26  | Numero da Invoice              |  A   | 015  |  -  | 361-375  |                                |
-| 27  | Valor do ICMS a recolher       |  N   | 015  | 02  | 376-390  |                                |
-| 28  | Peso Liquido do item           |  N   | 011  | 04  | 391-401  | Mandatory                      |
-| 29  | Item do Pedido de Compra       |  C   | 004  |  -  | 402-405  | Mandatory in Easy              |
-| 30  | Alíquota de II                 |  N   | 005  |  2  | 406-410  |                                |
-| 31  | Numero do pedido               |  C   | 017  |  -  | 411-427  | Mandatory in Easy              |
-| 32  | Nro do Pedido de Licenc.       |  C   | 010  |  -  | 428-437  | PLI Number                     |
-| 33  | Série da Nota Fiscal           |  C   | 003  |  -  | 438-440  | Match header                   |
-| 34  | Base de ICMS (por item)        |  N   | 015  | 02  | 441-455  |                                |
-| 35  | Valor FOB na moeda de Origem   |  N   | 015  | 07  | 456-470  | Unit FOB value                 |
-| 36  | Alíquota do PIS                |  N   | 006  | 02  | 471-476  |                                |
-| 37  | Vlr por qtde do PIS            |  N   | 009  | 02  | 477-485  |                                |
-| 38  | Base de cálculo do PIS         |  N   | 015  | 02  | 486-500  |                                |
-| 39  | Valor do PIS                   |  N   | 015  | 02  | 501-515  |                                |
-| 40  | Alíquota do COFINS             |  N   | 006  | 02  | 516-521  |                                |
-| 41  | Vlr por qtde do COFINS         |  N   | 009  | 02  | 522-530  |                                |
-| 42  | Base de cálculo do COFINS      |  N   | 015  | 02  | 531-545  |                                |
-| 43  | Valor do COFINS                |  N   | 015  | 02  | 546-560  |                                |
-| 44  | Número da adição               |  C   | 003  |  -  | 561-563  |                                |
-| 45  | Sequencia do item da adição    |  C   | 003  |  -  | 564-566  |                                |
-| 46  | Valor do desconto              |  N   | 015  | 02  | 567-581  |                                |
-| 47  | Valor do IOF                   |  N   | 015  | 02  | 582-596  |                                |
-| 48  | Despesas Aduaneiras            |  N   | 015  | 02  | 597-611  |                                |
-| 49  | Alíquota específica do IPI     |  N   | 015  | 04  | 612-626  |                                |
-| 50  | Qtde total - IPI               |  N   | 011  | 04  | 627-637  |                                |
-| 51  | Qtde total - PIS               |  N   | 011  | 04  | 638-648  |                                |
-| 52  | Qtde total - COFINS            |  N   | 011  | 04  | 649-659  |                                |
-| 53  | Lote                           |  C   | 010  | 00  | 660-669  |                                |
-| 54  | Validade                       |  D   | 008  | 00  | 670-677  | AAAAMMDD                       |
-| 55  | Aliq ICMS - ICMS               |  N   | 005  | 02  | 678-682  |                                |
-| 56  | Alíquota de Majoração COFINS   |  N   | 006  | 02  | 683-688  |                                |
-| **57** | **Percentual Diferimento de ICMS** |**N**|**008**|**04**|**689-696**| Renamed from "Perc. Rateio" |
-| **58** | **Código da LI**            |**C** |**010**|**-** |**697-706**| **NEW** — WP_REGIST (Siscomex) |
-| **59** | **Código da LI Substitutiva** |**C**|**010**|**-**|**707-716**| **NEW** — WP_SUBST          |
+| 11  | Quantidade                     |  N   | 012  | 04  | 055-066  | Mandatory                      |
+| 12  | Unidade                        |  A   | 003  |  -  | 067-069  | Unused (uses Easy unit)        |
+| 13  | Vlr. - IPI                     |  N   | 015  | 02  | 070-084  |                                |
+| 14  | Valor Mercadoria (CIF+II)      |  N   | 015  | 02  | 085-099  | Mandatory                      |
+| 15  | Flag de Entrada                |  A   | 001  |  -  | 100-100  | Fixed "I"                      |
+| 16  | Quantidade do Recebimento      |  N   | 011  | 04  | 101-111  | Unused                         |
+| 17  | Descrição do Produto           |  A   | 150  |  -  | 112-261  |                                |
+| 18  | Valor Fob R$                   |  N   | 015  | 02  | 262-276  | Mandatory                      |
+| 19  | Valor Frete R$                 |  N   | 015  | 02  | 277-291  | Item freight                   |
+| 20  | Valor do Seguro R$             |  N   | 015  | 02  | 292-306  | Item insurance                 |
+| 21  | Valor II R$                    |  N   | 015  | 02  | 307-321  | Import Duty value              |
+| 22  | Alíquota IPI                   |  N   | 005  | 02  | 322-326  |                                |
+| 23  | Valor Despesas                 |  N   | 015  | 02  | 327-341  | Other expenses                 |
+| 24  | Nro Processo no Easy           |  A   | 017  |  -  | 342-358  | Mandatory                      |
+| 25  | Numero da EX da NCM            |  A   | 003  |  -  | 359-361  | NCM exception                  |
+| 26  | Numero da Invoice              |  A   | 015  |  -  | 362-376  |                                |
+| 27  | Valor do ICMS a recolher       |  N   | 015  | 02  | 377-391  |                                |
+| 28  | Peso Liquido do item           |  N   | 011  | 04  | 392-402  | Mandatory                      |
+| 29  | Item do Pedido de Compra       |  C   | 004  |  -  | 403-406  | Mandatory in Easy              |
+| 30  | Alíquota de II                 |  N   | 005  |  2  | 407-411  |                                |
+| 31  | Numero do pedido               |  C   | 017  |  -  | 412-428  | Mandatory in Easy              |
+| 32  | Nro do Pedido de Licenc.       |  C   | 010  |  -  | 429-438  | PLI Number                     |
+| 33  | Série da Nota Fiscal           |  C   | 003  |  -  | 439-441  | Match header                   |
+| 34  | Base de ICMS (por item)        |  N   | 015  | 02  | 442-456  |                                |
+| 35  | Valor FOB na moeda de Origem   |  N   | 015  | 07  | 457-471  | Unit FOB value                 |
+| 36  | Alíquota do PIS                |  N   | 006  | 02  | 472-477  |                                |
+| 37  | Vlr por qtde do PIS            |  N   | 009  | 02  | 478-486  |                                |
+| 38  | Base de cálculo do PIS         |  N   | 015  | 02  | 487-501  |                                |
+| 39  | Valor do PIS                   |  N   | 015  | 02  | 502-516  |                                |
+| 40  | Alíquota do COFINS             |  N   | 006  | 02  | 517-522  |                                |
+| 41  | Vlr por qtde do COFINS         |  N   | 009  | 02  | 523-531  |                                |
+| 42  | Base de cálculo do COFINS      |  N   | 015  | 02  | 532-546  |                                |
+| 43  | Valor do COFINS                |  N   | 015  | 02  | 547-561  |                                |
+| 44  | Número da adição               |  C   | 003  |  -  | 562-564  |                                |
+| 45  | Sequencia do item da adição    |  C   | 003  |  -  | 565-567  |                                |
+| 46  | Valor do desconto              |  N   | 015  | 02  | 568-582  |                                |
+| 47  | Valor do IOF                   |  N   | 015  | 02  | 583-597  |                                |
+| 48  | Despesas Aduaneiras            |  N   | 015  | 02  | 598-612  |                                |
+| 49  | Alíquota específica do IPI     |  N   | 015  | 04  | 613-627  |                                |
+| 50  | Qtde total - IPI               |  N   | 011  | 04  | 628-638  |                                |
+| 51  | Qtde total - PIS               |  N   | 011  | 04  | 639-649  |                                |
+| 52  | Qtde total - COFINS            |  N   | 011  | 04  | 650-660  |                                |
+| 53  | Lote                           |  C   | 010  | 00  | 661-670  |                                |
+| 54  | Validade                       |  D   | 008  | 00  | 671-678  | AAAAMMDD                       |
+| 55  | Aliq ICMS - ICMS               |  N   | 005  | 02  | 679-683  |                                |
+| 56  | Alíquota de Majoração COFINS   |  N   | 006  | 02  | 684-689  |                                |
+| **57** | **Percentual Diferimento de ICMS** |**N**|**008**|**04**|**690-697**| Renamed from "Perc. Rateio" |
+| **58** | **Código da LI**            |**C** |**010**|**-** |**698-707**| **NEW** — WP_REGIST (Siscomex) |
+| **59** | **Código da LI Substitutiva** |**C**|**010**|**-**|**708-717**| **NEW** — WP_SUBST          |
 
 ## 4. Important Notes
 

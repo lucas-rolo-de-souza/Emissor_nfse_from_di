@@ -64,11 +64,12 @@ The output is a **Fixed-Width Text File** following the **"Layout - Nota Fiscal 
 > **Note**: This is distinct from the [Leiaute do TXT da DI](https://www.gov.br/receitafederal/pt-br/assuntos/aduana-e-comercio-exterior/manuais/despacho-de-importacao/sistemas/siscomex-importacao-web/declaracao-de-importacao/funcionalidades/links-para-arquivos/leiaute-do-txt-da-di.doc) provided by Siscomex. We convert _from_ Siscomex XML _to_ this specific ERP TXT layout.
 
 - **File Structure**:
-  - **Header Record (Type 1)**: 380 characters. Contains summary data (Importer, Totals, Dates).
-  - **Item Records (Type 2)**: 688 characters per item. Contains product details, tax rates, and values.
+  - **Header Record (Type 1)**: 399 characters (or 380 characters in legacy format when DUIMP/Versão fields are omitted). Contains summary data (Importer, Totals, Dates).
+  - **Item Records (Type 2)**: 717 characters (or 697 characters in legacy format when LI fields are omitted). Contains product details, tax rates, and values.
+  - **Line Endings & Encoding**: Strictly generated with CRLF (`\r\n`) line endings in UTF-8 (without BOM) encoding.
 - **Formatting Rules**:
   - **Numeric (N)**: Zero-padded left, explicit dot separator for decimals (e.g., `000150.00`).
-  - **Alpha (A/C)**: Space-padded right (e.g., `TEXT      `).
+  - **Alpha (A/C)**: Space-padded right (e.g., `TEXT      `), with all accents and special characters transliterated to clean ASCII text.
   - **Dates**: `AAAAMMDD` or `DDMMAA` depending on the specific field.
 
 ## 4. Key Components

@@ -1,0 +1,1521 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TOTVS SIGAEIC - Explorador de Layout de Nota Fiscal de Entrada</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --bg-color: #0b0f19;
+      --card-bg: rgba(17, 24, 39, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text-color: #f3f4f6;
+      --text-muted: #9ca3af;
+      --primary: #10b981;
+      --primary-glow: rgba(16, 185, 129, 0.15);
+      --secondary: #6366f1;
+      --secondary-glow: rgba(99, 102, 241, 0.15);
+      --accent: #f59e0b;
+      --danger: #ef4444;
+      --danger-glow: rgba(239, 68, 68, 0.1);
+      --success: #10b981;
+      --header-bg: rgba(15, 23, 42, 0.8);
+      --table-hover: rgba(255, 255, 255, 0.03);
+      --font-outfit: 'Outfit', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: var(--font-outfit);
+      line-height: 1.6;
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 40%);
+      background-attachment: fixed;
+      padding-bottom: 50px;
+    }
+
+    header {
+      background: var(--header-bg);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .header-logo {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .header-logo .icon {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #000;
+      font-size: 1.25rem;
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+    }
+
+    .header-title h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      background: linear-gradient(to right, #ffffff, #d1d5db);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-title p {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+    }
+
+    .layout-badge {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid var(--secondary);
+      color: #a5b4fc;
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 2rem auto;
+      padding: 0 1.5rem;
+    }
+
+    /* Tabs Navigation */
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      background: rgba(17, 24, 39, 0.5);
+      padding: 0.4rem;
+      border-radius: 14px;
+      border: 1px solid var(--card-border);
+      width: fit-content;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 0.75rem 1.5rem;
+      font-family: var(--font-outfit);
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 10px;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-color);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .tab-btn.active {
+      color: #ffffff;
+      background: linear-gradient(135deg, var(--secondary), rgba(99, 102, 241, 0.6));
+      box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+    }
+
+    /* Search & Filter Bar */
+    .filter-bar {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .search-input {
+      width: 100%;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 0.85rem 1rem 0.85rem 2.5rem;
+      border-radius: 12px;
+      color: var(--text-color);
+      font-family: var(--font-outfit);
+      font-size: 0.95rem;
+      transition: all 0.2s ease;
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--secondary);
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.15);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+
+    .filter-select {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      padding: 0.85rem 1.5rem;
+      border-radius: 12px;
+      color: var(--text-color);
+      font-family: var(--font-outfit);
+      font-size: 0.95rem;
+      cursor: pointer;
+      min-width: 180px;
+    }
+
+    .filter-select:focus {
+      outline: none;
+      border-color: var(--secondary);
+    }
+
+    /* Content Area */
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.4s ease;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Glassmorphism Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      padding-bottom: 0.75rem;
+    }
+
+    .card-title .icon-tag {
+      background: var(--secondary-glow);
+      color: #818cf8;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+    }
+
+    /* Layout Information Banners */
+    .grid-info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .info-tile {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      padding: 1rem;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .info-tile .label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .info-tile .value {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .info-tile.highlight {
+      border-color: rgba(16, 185, 129, 0.2);
+      background: var(--primary-glow);
+    }
+
+    .info-tile.highlight .value {
+      color: var(--primary);
+    }
+
+    /* Elegant Custom Table Styling */
+    .table-container {
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+    }
+
+    .layout-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.925rem;
+    }
+
+    .layout-table th {
+      background: rgba(15, 23, 42, 0.6);
+      padding: 1rem;
+      font-weight: 600;
+      color: #ffffff;
+      border-bottom: 1px solid var(--card-border);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+    }
+
+    .layout-table td {
+      padding: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #d1d5db;
+      vertical-align: middle;
+    }
+
+    .layout-table tbody tr {
+      transition: background-color 0.2s ease;
+    }
+
+    .layout-table tbody tr:hover {
+      background-color: var(--table-hover);
+    }
+
+    .layout-table tbody tr.mandatory-row {
+      border-left: 3px solid var(--accent);
+    }
+
+    .layout-table tbody tr.fixed-row {
+      border-left: 3px solid var(--secondary);
+    }
+
+    /* Position & Size Styling */
+    .pos-badge {
+      font-family: var(--font-mono);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.825rem;
+      color: #f3f4f6;
+    }
+
+    .size-badge {
+      font-family: var(--font-mono);
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.825rem;
+      color: #818cf8;
+      font-weight: 500;
+    }
+
+    /* Badges */
+    .badge {
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.775rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      display: inline-block;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-c { background: rgba(99, 102, 241, 0.1); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.2); }
+    .badge-n { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+    .badge-d { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+    .badge-l { background: rgba(168, 85, 247, 0.1); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.2); }
+
+    .badge-req { background: rgba(239, 68, 68, 0.1); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.2); }
+    .badge-opt { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+    .badge-unused { background: rgba(156, 163, 175, 0.1); color: #9ca3af; border: 1px solid rgba(156, 163, 175, 0.2); }
+
+    .protheus-var {
+      font-family: var(--font-mono);
+      color: #93c5fd;
+      font-weight: 500;
+    }
+
+    /* Warnings and Alerts GFM Style */
+    .alert-box {
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin-bottom: 1.5rem;
+      border-left: 4px solid;
+      display: flex;
+      gap: 1rem;
+      backdrop-filter: blur(10px);
+    }
+
+    .alert-box.alert-important {
+      background: rgba(239, 68, 68, 0.05);
+      border-color: var(--danger);
+      color: #fca5a5;
+    }
+
+    .alert-box.alert-tip {
+      background: rgba(16, 185, 129, 0.05);
+      border-color: var(--primary);
+      color: #a7f3d0;
+    }
+
+    .alert-box.alert-note {
+      background: rgba(99, 102, 241, 0.05);
+      border-color: var(--secondary);
+      color: #c7d2fe;
+    }
+
+    .alert-box h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .alert-box .icon {
+      font-size: 1.25rem;
+      line-height: 1;
+    }
+
+    /* Taxonomy & Formula styling */
+    .formula-card {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px dashed rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 1.25rem;
+      margin: 1rem 0;
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      color: #a7f3d0;
+      position: relative;
+    }
+
+    .formula-tag {
+      position: absolute;
+      top: -10px;
+      left: 15px;
+      background: #064e3b;
+      border: 1px solid #047857;
+      color: #34d399;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      letter-spacing: 0.05em;
+    }
+
+    /* Visual position ruler map */
+    .ruler-map {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2px;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 1rem;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      max-height: 250px;
+      overflow-y: auto;
+      margin-top: 1rem;
+    }
+
+    .ruler-cell {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 500;
+      font-family: var(--font-mono);
+      border-radius: 4px;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+      color: rgba(255, 255, 255, 0.4);
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.02);
+    }
+
+    .ruler-cell:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: scale(1.1);
+      color: #ffffff;
+      z-index: 5;
+    }
+
+    .ruler-cell.active-field {
+      background: var(--secondary-glow);
+      border-color: var(--secondary);
+      color: #a5b4fc;
+    }
+
+    .ruler-cell.active-field-primary {
+      background: var(--primary-glow);
+      border-color: var(--primary);
+      color: #a7f3d0;
+    }
+
+    .ruler-cell.active-field-accent {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: var(--accent);
+      color: #fde047;
+    }
+
+    /* Interactive Parser Playground */
+    .playground-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 1024px) {
+      .playground-grid {
+        grid-template-columns: 3fr 2fr;
+      }
+    }
+
+    .playground-textarea {
+      width: 100%;
+      height: 120px;
+      background: #070a13;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      color: #10b981;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      padding: 1rem;
+      resize: vertical;
+      transition: all 0.2s ease;
+      margin-bottom: 1rem;
+      letter-spacing: 0.05em;
+    }
+
+    .playground-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
+    }
+
+    .btn {
+      background: linear-gradient(135deg, var(--primary), #059669);
+      color: #000000;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      font-family: var(--font-outfit);
+      font-weight: 600;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-color);
+      border: 1px solid var(--card-border);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: none;
+    }
+
+    .example-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-family: var(--font-outfit);
+      transition: all 0.2s ease;
+    }
+
+    .example-btn:hover {
+      background: var(--secondary-glow);
+      border-color: var(--secondary);
+      color: #a5b4fc;
+    }
+
+    .examples-container {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .parser-stats {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .parsed-badge {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--card-border);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-family: var(--font-mono);
+    }
+
+    .parsed-badge.valid {
+      border-color: var(--success);
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .parsed-badge.invalid {
+      border-color: var(--danger);
+      color: #f87171;
+      background: rgba(239, 68, 68, 0.05);
+    }
+
+    /* Live Output Results */
+    .parsed-results-panel {
+      max-height: 500px;
+      overflow-y: auto;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .parsed-field-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      align-items: center;
+    }
+
+    .parsed-field-row:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .parsed-field-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .parsed-field-name {
+      font-weight: 500;
+      font-size: 0.9rem;
+      color: #ffffff;
+    }
+
+    .parsed-field-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .parsed-field-val {
+      font-family: var(--font-mono);
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      padding: 0.25rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      max-width: 60%;
+      word-break: break-all;
+      text-align: right;
+    }
+
+    .parsed-field-row.empty-field .parsed-field-val {
+      background: rgba(255, 255, 255, 0.03);
+      border-color: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+    }
+
+    .parsed-field-row.error-field {
+      border-left: 3px solid var(--danger);
+    }
+
+    .parsed-field-row.error-field .parsed-field-val {
+      background: rgba(239, 68, 68, 0.08);
+      border-color: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+    }
+
+    .floating-tips {
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .floating-tips ul {
+      margin-left: 1.25rem;
+      margin-top: 0.5rem;
+    }
+
+    .floating-tips li {
+      margin-bottom: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-logo">
+      <div class="icon">T</div>
+      <div class="header-title">
+        <h1>TOTVS SIGAEIC Integration</h1>
+        <p>Explorador e Validador Interativo de Layout — Nota Fiscal de Entrada</p>
+      </div>
+    </div>
+    <div class="layout-badge">
+      <span class="icon">🗂️</span> Versão: Protheus V12 (Easy Import Control)
+    </div>
+  </header>
+
+  <div class="container">
+
+    <!-- Overview Banner -->
+    <div class="card" style="background: linear-gradient(135deg, rgba(17, 24, 39, 0.8) 0%, rgba(99, 102, 241, 0.05) 100%);">
+      <h2 style="font-size: 1.5rem; margin-bottom: 0.75rem; font-weight: 600;">Integração Despachante ERP (Microsiga Protheus)</h2>
+      <p style="color: var(--text-muted); max-width: 1000px; margin-bottom: 1.5rem;">
+        Esta documentação detalha a estrutura de integração de arquivos de texto plano ASCII (extensão .TXT) 
+        para importação direta via rotina <strong>"Integração"</strong> em <strong>Misceleana → Integração → Despachante</strong> no módulo <strong>SIGAEIC</strong>. 
+        O arquivo não contém delimitador de campos (largura fixa) e cada registro é encerrado com <strong>CRLF (Carriage Return + Line Feed, \r\n)</strong>.
+      </p>
+      
+      <div class="grid-info">
+        <div class="info-tile">
+          <span class="label">Registro Tipo "1" (Capa)</span>
+          <span class="value">399 Caracteres (380 sem DUIMP)</span>
+        </div>
+        <div class="info-tile">
+          <span class="label">Registro Tipo "2" (Item)</span>
+          <span class="value">717 Caracteres (697 sem LI)</span>
+        </div>
+        <div class="info-tile highlight">
+          <span class="label">Codificação</span>
+          <span class="value">ASCII (Sem acentos/Símbolos)</span>
+        </div>
+        <div class="info-tile highlight">
+          <span class="label">Decimal Separator</span>
+          <span class="value">Obrigatório "." (Ponto)</span>
+        </div>
+      </div>
+
+      <!-- Tributary Reform Alert Box -->
+      <div class="alert-box alert-important" style="margin-bottom: 0;">
+        <span class="icon" style="font-size: 1.5rem;">⚠️</span>
+        <div>
+          <h4>IMPORTANTE: Impacto da Reforma Tributária (Novos Tributos CBS e IBS)</h4>
+          <p style="font-size: 0.9rem; margin-top: 0.25rem;">
+            O cálculo e gravação dos novos tributos federais <strong>CBS</strong> (Contribuição sobre Bens e Serviços) e <strong>IBS</strong> (Imposto sobre Bens e Serviços) foram incorporados nativamente ao módulo de recebimento do Protheus. 
+            <strong>Note que estes novos campos NÃO foram adicionados à estrutura do layout do arquivo TXT.</strong>
+            Para que a tributação de CBS e IBS funcione corretamente durante a integração do arquivo:
+          </p>
+          <ul style="font-size: 0.875rem; margin-left: 1.25rem; margin-top: 0.5rem; list-style-type: square;">
+            <li><strong>Para processos DUIMP:</strong> As alíquotas e base de cálculo são herdadas dos dados da tabela de <strong>Itens de DUIMP (SWN)</strong>.</li>
+            <li><strong>Para processos DI:</strong> Os valores de CBS/IBS são calculados via regras vinculadas ao <strong>Cadastro de NCM</strong> associado ao item integrado.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab('tab-header')">📋 Registro Capa (Tipo "1")</button>
+      <button class="tab-btn" onclick="switchTab('tab-items')">📦 Registro Item (Tipo "2")</button>
+      <button class="tab-btn" onclick="switchTab('tab-taxes')">🧮 Regras e Fórmulas de Cálculo</button>
+      <button class="tab-btn" onclick="switchTab('tab-playground')" style="color: var(--primary); font-weight: 600;">⚡ Validador de Linha (Playground)</button>
+    </div>
+
+    <!-- TAB 1: HEADER LAYOUT -->
+    <div id="tab-header" class="tab-content active">
+      <div class="card">
+        <div class="card-title">
+          <div class="icon-tag">01</div>
+          Tabela de Campos da Capa (Registro Tipo "1")
+        </div>
+
+        <div class="alert-box alert-note">
+          <span class="icon">ℹ️</span>
+          <div>
+            <h4>Instruções de Formatação de Capa</h4>
+            <p style="font-size: 0.875rem;">
+              Os campos devem ser concatenados sequencialmente sem nenhum espaço adicional entre eles. 
+              Campos numéricos com decimais devem conter o caractere ponto (ex: <code>00000000025.00</code>). 
+              A data de entrega ou data de registro deve seguir o formato <strong>AAAAMMDD</strong>.
+            </p>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="search-input-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="search-header" placeholder="Pesquisar campos da Capa por nome, Protheus var ou posição..." onkeyup="filterTable('headerTable', 'search-header')">
+          </div>
+          <select class="filter-select" id="relevance-header" onchange="filterRelevance('headerTable', 'relevance-header')">
+            <option value="ALL">Todas as Relevâncias</option>
+            <option value="MANDATORY">Obrigatórios</option>
+            <option value="OPTIONAL">Opcionais</option>
+            <option value="NOT_USED">Não Utilizados</option>
+          </select>
+        </div>
+
+        <div class="table-container">
+          <table class="layout-table" id="headerTable">
+            <thead>
+              <tr>
+                <th style="width: 50px;">Seq</th>
+                <th>Nome do Campo</th>
+                <th>Tipo</th>
+                <th style="width: 80px;">Tamanho</th>
+                <th style="width: 100px;">Posição</th>
+                <th>Campo Protheus</th>
+                <th>Relevância</th>
+                <th>Dicas e Regras de Preenchimento</th>
+              </tr>
+            </thead>
+            <tbody id="headerTableBody">
+              <!-- Rendered dynamically by Javascript to ensure accuracy -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: ITEM LAYOUT -->
+    <div id="tab-items" class="tab-content">
+      <div class="card">
+        <div class="card-title">
+          <div class="icon-tag">02</div>
+          Tabela de Campos dos Itens (Registro Tipo "2")
+        </div>
+
+        <div class="alert-box alert-note">
+          <span class="icon">ℹ️</span>
+          <div>
+            <h4>Instruções de Formatação de Itens</h4>
+            <p style="font-size: 0.875rem;">
+              Deve conter uma linha do Tipo "2" para cada item da nota. A NCM e o Código do Produto são verificados diretamente com os cadastros do módulo Easy Import Control no Protheus e <strong>rejeitarão a nota caso não estejam previamente cadastrados</strong>.
+            </p>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="search-input-wrapper">
+            <span class="search-icon">🔍</span>
+            <input type="text" class="search-input" id="search-items" placeholder="Pesquisar campos de Itens por nome, Protheus var ou posição..." onkeyup="filterTable('itemsTable', 'search-items')">
+          </div>
+          <select class="filter-select" id="relevance-items" onchange="filterRelevance('itemsTable', 'relevance-items')">
+            <option value="ALL">Todas as Relevâncias</option>
+            <option value="MANDATORY">Obrigatórios</option>
+            <option value="OPTIONAL">Opcionais</option>
+            <option value="NOT_USED">Não Utilizados</option>
+          </select>
+        </div>
+
+        <div class="table-container">
+          <table class="layout-table" id="itemsTable">
+            <thead>
+              <tr>
+                <th style="width: 50px;">Seq</th>
+                <th>Nome do Campo</th>
+                <th>Tipo</th>
+                <th style="width: 80px;">Tamanho</th>
+                <th style="width: 100px;">Posição</th>
+                <th>Campo Protheus</th>
+                <th>Relevância</th>
+                <th>Dicas e Regras de Preenchimento</th>
+              </tr>
+            </thead>
+            <tbody id="itemsTableBody">
+              <!-- Rendered dynamically by Javascript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: TAX RULES -->
+    <div id="tab-taxes" class="tab-content">
+      <div class="card">
+        <div class="card-title">
+          <div class="icon-tag">🧮</div>
+          Fórmulas de Cálculo e Validação Interna do Protheus
+        </div>
+
+        <div class="alert-box alert-tip">
+          <span class="icon">💡</span>
+          <div>
+            <h4>Regra Geral de Cálculos Aduaneiros (Brasil)</h4>
+            <p style="font-size: 0.875rem;">
+              Para evitar divergências tributárias na validação do SEFAZ ao integrar o arquivo TXT, certifique-se de que os cálculos de base de imposto sejam submetidos à ordem cascata brasileira descrita abaixo.
+            </p>
+          </div>
+        </div>
+
+        <h3 style="margin-top: 1.5rem; margin-bottom: 0.75rem; border-left: 3px solid var(--secondary); padding-left: 10px;">1. Valor Aduaneiro (Base Fundamental)</h3>
+        <p style="color: var(--text-muted); font-size: 0.925rem; margin-bottom: 0.5rem;">
+          Representa o custo total da mercadoria até chegar ao porto/aeroporto de entrada nacional. Serve como base de cálculo padrão para o imposto II.
+        </p>
+        <div class="formula-card">
+          <span class="formula-tag">Valor Aduaneiro</span>
+          Valor Aduaneiro = FOB + Frete Internacional + Seguro Internacional
+        </div>
+
+        <h3 style="margin-top: 1.5rem; margin-bottom: 0.75rem; border-left: 3px solid var(--secondary); padding-left: 10px;">2. Imposto de Importação (II) e IPI</h3>
+        <p style="color: var(--text-muted); font-size: 0.925rem; margin-bottom: 0.5rem;">
+          O IPI incide sobre a soma do valor aduaneiro e do valor apurado do próprio Imposto de Importação (II).
+        </p>
+        <div class="formula-card">
+          <span class="formula-tag">Fórmulas II & IPI</span>
+          Base II = Valor Aduaneiro<br>
+          Valor II = Base II × Alíquota II (%)<br><br>
+          Base IPI = Valor Aduaneiro + Valor II<br>
+          Valor IPI = Base IPI × Alíquota IPI (%)
+        </div>
+
+        <h3 style="margin-top: 1.5rem; margin-bottom: 0.75rem; border-left: 3px solid var(--secondary); padding-left: 10px;">3. PIS e COFINS</h3>
+        <p style="color: var(--text-muted); font-size: 0.925rem; margin-bottom: 0.5rem;">
+          Geralmente calculados diretamente sobre o valor aduaneiro bruto (método simplificado adotado por padrão no importador).
+        </p>
+        <div class="formula-card">
+          <span class="formula-tag">Fórmulas PIS/COFINS</span>
+          Base PIS = Valor Aduaneiro<br>
+          Valor PIS = Base PIS × Alíquota PIS (%)<br><br>
+          Base COFINS = Valor Aduaneiro<br>
+          Valor COFINS = Base COFINS × Alíquota COFINS (%)
+        </div>
+
+        <h3 style="margin-top: 1.5rem; margin-bottom: 0.75rem; border-left: 3px solid var(--secondary); padding-left: 10px;">4. ICMS "Por Dentro" (Cálculo em Cascata)</h3>
+        <p style="color: var(--text-muted); font-size: 0.925rem; margin-bottom: 0.5rem;">
+          O ICMS possui base de cálculo própria que engloba todos os tributos federais devidos (II, IPI, PIS, COFINS), mais despesas aduaneiras (taxa Siscomex, etc.), dividida pelo fator complementar da própria alíquota interna da UF.
+        </p>
+        <div class="formula-card" style="color: #fbbf24;">
+          <span class="formula-tag" style="background: #78350f; border-color: #d97706; color: #fbbf24;">ICMS CASCATA</span>
+          Base Bruta = Valor Aduaneiro + Valor II + Valor IPI + Valor PIS + Valor COFINS + Despesas Aduaneiras<br>
+          Base Final ICMS = Base Bruta / (1 - Alíquota ICMS %)<br>
+          Valor ICMS a Recolher = Base Final ICMS × Alíquota ICMS (%)
+        </div>
+
+        <div class="alert-box alert-note" style="margin-top: 1.5rem; margin-bottom: 0;">
+          <span class="icon">📝</span>
+          <div>
+            <h4>Novas Bases de CBS e IBS (Pós Reforma)</h4>
+            <p style="font-size: 0.875rem;">
+              Caso aplique-se regras de tributos da Reforma, a base agregada do CBS e IBS será composta por:
+              <br><code>Valor Aduaneiro + Despesas Base de Imposto - Deduções + Despesas de ICMS + II + PIS + COFINS</code> (excluindo IPI e o próprio ICMS).
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: INTERACTIVE PARSER PLAYGROUND -->
+    <div id="tab-playground" class="tab-content">
+      <div class="card">
+        <div class="card-title">
+          <div class="icon-tag" style="background: var(--primary-glow); color: var(--primary);">⚡</div>
+          Validador Interativo de Estrutura de Linha TXT
+        </div>
+        
+        <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.925rem;">
+          Cole uma linha extraída do seu arquivo TXT de integração no editor abaixo. O motor irá detectar automaticamente se o registro representa uma <strong>Capa (Tipo 1)</strong> ou um <strong>Item (Tipo 2)</strong>, validará o tamanho de caracteres correspondente e desmembrará campo por campo com base nas larguras fixas.
+        </p>
+
+        <div class="examples-container">
+          <span style="font-size: 0.85rem; font-weight: 500; color: #9ca3af;">Carregar Exemplos de Teste:</span>
+          <button class="example-btn" onclick="loadExample('header')">📋 Exemplo Capa (Tipo 1)</button>
+          <button class="example-btn" onclick="loadExample('item')">📦 Exemplo Item (Tipo 2)</button>
+        </div>
+
+        <div class="playground-grid">
+          <div>
+            <textarea class="playground-textarea" id="txt-input" placeholder="Cole sua linha do TXT aqui (Ex: 101010000000000000000000...)" oninput="parseLiveLine()"></textarea>
+            
+            <div class="parser-stats">
+              <div class="parsed-badge" id="badge-detected-type">Tipo Detectado: Nenhum</div>
+              <div class="parsed-badge" id="badge-char-count">Caracteres: 0</div>
+              <div class="parsed-badge" id="badge-validation-status">Status: Aguardando Entrada</div>
+            </div>
+
+            <h4 style="font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.5rem;">Visualizador do Mapa de Posições de Caractere:</h4>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+              Hover sobre as posições abaixo para identificar qual campo corresponde a cada caractere específico da linha.
+            </p>
+            <div class="ruler-map" id="visual-ruler-map">
+              <!-- Rendered dynamically -->
+            </div>
+            
+            <div class="floating-tips">
+              <strong>💡 Dicas Rápidas de Diagnóstico:</strong>
+              <ul>
+                <li>Se sua linha tiver menos ou mais caracteres do que o esperado (399 para Capa, 717 para Item), o Protheus irá rejeitar o registro ou interpretar os campos de forma desalinhada.</li>
+                <li>Certifique-se de que não haja acentos ou caracteres especiais em textos como a Descrição do Produto.</li>
+                <li>Verifique se as datas não contêm caracteres de barra "/" ou traço "-".</li>
+              </ul>
+            </div>
+          </div>
+
+          <div>
+            <div class="card" style="padding: 1.25rem; border-color: rgba(255,255,255,0.05); background: rgba(10,15,30,0.4); margin-bottom: 0;">
+              <h3 style="font-size: 1.1rem; margin-bottom: 1rem; color: #ffffff; display: flex; justify-content: space-between; align-items: center;">
+                <span>Campos Desmembrados</span>
+                <span style="font-size: 0.8rem; font-weight: normal; color: var(--text-muted);" id="parsed-fields-count">0/0 campos</span>
+              </h3>
+              
+              <div class="parsed-results-panel" id="parsed-results-container">
+                <div style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">
+                  Digite ou cole uma linha de arquivo para iniciar o desmembramento.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // DEFINE RAW DATABASE FOR FIELDS ACCORDING TO PDF SPECIFICATIONS
+    const HEADER_LAYOUT = [
+      { seq: "01", name: "Tipo", type: "C", size: 1, pos: [1, 1], mapping: "Fixo '1'", relevance: "MANDATORY", rule: "Identificador de registro do tipo Capa da Nota Fiscal." },
+      { seq: "02", name: "Código da Empresa", type: "N", size: 2, pos: [2, 3], mapping: "Fixo '01'", relevance: "MANDATORY", rule: "Código identificador da empresa padrão TOTVS." },
+      { seq: "03", name: "Código da Filial", type: "N", size: 2, pos: [4, 5], mapping: "Fixo '01'", relevance: "MANDATORY", rule: "Código identificador da filial da empresa." },
+      { seq: "04", name: "Número da Nota", type: "N", size: 9, pos: [6, 14], mapping: "F1_DOC / WN_DOC", relevance: "MANDATORY", rule: "Número sequencial da Nota Fiscal de Entrada. Campo obrigatório." },
+      { seq: "05", name: "Filler", type: "C", size: 6, pos: [15, 20], mapping: "-", relevance: "NOT_USED", rule: "Espaço em branco reservado para compatibilidade." },
+      { seq: "06", name: "Aliq. ICMS", type: "N", size: 7, pos: [21, 27], decimals: 2, mapping: "WN_ICMS_A / D1_PICM", relevance: "OPTIONAL", rule: "Alíquota de ICMS do processo. Requer parâmetro MV_EIC0010 configurado." },
+      { seq: "07", name: "CFOP", type: "N", size: 6, pos: [28, 33], mapping: "D1_CF / WN_CFO", relevance: "MANDATORY", rule: "Código Fiscal de Operações e Prestações. Deve estar previamente cadastrado no Easy." },
+      { seq: "08", name: "CFP", type: "C", size: 5, pos: [34, 38], mapping: "-", relevance: "NOT_USED", rule: "Campo não utilizado no recebimento." },
+      { seq: "09", name: "CGC - Emitente", type: "N", size: 14, pos: [39, 52], mapping: "-", relevance: "NOT_USED", rule: "Campo não utilizado pelo sistema." },
+      { seq: "10", name: "Código do IPI", type: "C", size: 3, pos: [53, 55], mapping: "-", relevance: "NOT_USED", rule: "Campo não utilizado pelo sistema." },
+      { seq: "11", name: "Número do Processo", type: "C", size: 17, pos: [56, 72], mapping: "F1_HAWB / W6_HAWB", relevance: "MANDATORY", rule: "Número do processo de embarque/desembaraço no Easy Import Control. Obrigatório." },
+      { seq: "12", name: "Quantidade de Itens", type: "N", size: 2, pos: [73, 74], mapping: "-", relevance: "MANDATORY", rule: "Quantidade total de itens contidos na nota (Máx. 99 itens). Obrigatório." },
+      { seq: "13", name: "Data de Referência", type: "N", size: 6, pos: [75, 80], mapping: "-", relevance: "NOT_USED", rule: "Informação não utilizada pelo módulo." },
+      { seq: "14", name: "Data de Emissão", type: "N", size: 8, pos: [81, 88], mapping: "F1_EMISSAO / D1_EMISSAO", relevance: "MANDATORY", rule: "Data de emissão da NF. Formato obrigatório AAAAMMDD." },
+      { seq: "15", name: "Data de Entrada", type: "N", size: 8, pos: [89, 96], mapping: "D1_DTDIGIT", relevance: "MANDATORY", rule: "Data de entrada da NF. Formato obrigatório AAAAMMDD. (Não gravada diretamente)." },
+      { seq: "16", name: "Filler", type: "C", size: 6, pos: [97, 102], mapping: "-", relevance: "NOT_USED", rule: "Espaço em branco reservado para compatibilidade." },
+      { seq: "17", name: "Data de Registro", type: "N", size: 8, pos: [103, 110], mapping: "W6_DTREG_D", relevance: "OPTIONAL", rule: "Data de registro da DI ou DUIMP no Siscomex. Formato AAAAMMDD." },
+      { seq: "18", name: "Filler", type: "C", size: 2, pos: [111, 112], mapping: "-", relevance: "NOT_USED", rule: "Espaço em branco reservado." },
+      { seq: "19", name: "Entrada / Saída", type: "C", size: 1, pos: [113, 113], mapping: "Fixo 'E'", relevance: "MANDATORY", rule: "Tipo de operação. Fixo como 'E' para notas fiscais de entrada." },
+      { seq: "20", name: "Espécie", type: "C", size: 3, pos: [114, 116], mapping: "F1_TIPO_NF / F1_ESPECIE", relevance: "MANDATORY", rule: "Espécie do documento. Deve ser um dos seguintes: NFC, NFE, NFM, NFF, NFU ou NFT." },
+      { seq: "21", name: "Flag Cancelada", type: "C", size: 1, pos: [117, 117], mapping: "-", relevance: "NOT_USED", rule: "Sinalizador de cancelamento. Não utilizado na importação." },
+      { seq: "22", name: "Filler", type: "C", size: 1, pos: [118, 118], mapping: "-", relevance: "NOT_USED", rule: "Espaço em branco reservado." },
+      { seq: "23", name: "Flag Entrada", type: "C", size: 1, pos: [119, 119], mapping: "Fixo 'I'", relevance: "MANDATORY", rule: "Identificador de fluxo. Fixo 'I' para Importação." },
+      { seq: "24", name: "Número da DI", type: "C", size: 10, pos: [120, 129], mapping: "W6_DI_NUM", relevance: "OPTIONAL", rule: "Número da Declaração de Importação no Siscomex. Se DUIMP, preencher com DUIMP." },
+      { seq: "25", name: "Série", type: "C", size: 3, pos: [130, 132], mapping: "WN_SERIE", relevance: "OPTIONAL", rule: "Série da nota fiscal. Deve bater exatamente com a série declarada nos itens." },
+      { seq: "26", name: "Código de Sit. Tributária", type: "C", size: 2, pos: [133, 134], mapping: "-", relevance: "NOT_USED", rule: "Campo não utilizado pelo sistema." },
+      { seq: "27", name: "Situação Tributária - E", type: "C", size: 5, pos: [135, 139], mapping: "-", relevance: "NOT_USED", rule: "Campo não utilizado pelo sistema." },
+      { seq: "28", name: "Situação Tributária - F", type: "C", size: 5, pos: [140, 144], mapping: "-", relevance: "NOT_USED", rule: "Campo não utilizado pelo sistema." },
+      { seq: "29", name: "UF do Emitente", type: "C", size: 2, pos: [145, 146], mapping: "-", relevance: "OPTIONAL", rule: "Estado da Federação do emitente. Deve ser um estado brasileiro válido (ex: MA, AM, CE) e não 'EX'." },
+      { seq: "30", name: "Via de Transporte", type: "C", size: 1, pos: [147, 147], mapping: "-", relevance: "NOT_USED", rule: "Via de transporte utilizada. Não gravada via capa." },
+      { seq: "31", name: "Valor do Frete", type: "N", size: 15, pos: [148, 162], decimals: 2, mapping: "F1_FRETE / W6_FRETE", relevance: "OPTIONAL", rule: "Valor global do frete internacional em reais." },
+      { seq: "32", name: "Valor do ICMS", type: "N", size: 15, pos: [163, 177], decimals: 2, mapping: "-", relevance: "NOT_USED", rule: "Campo não utilizado pelo sistema." },
+      { seq: "33", name: "Valor da Base do ICMS", type: "N", size: 15, pos: [178, 192], decimals: 2, mapping: "-", relevance: "NOT_USED", rule: "Campo não utilizado pelo sistema." },
+      { seq: "34", name: "Código do Importador", type: "C", size: 4, pos: [193, 196], mapping: "-", relevance: "NOT_USED", rule: "Campo não utilizado pelo sistema." },
+      { seq: "35", name: "Código do Transportador", type: "C", size: 20, pos: [197, 216], mapping: "-", relevance: "NOT_USED", rule: "Campo não utilizado pelo sistema." },
+      { seq: "36", name: "Valor do Seguro", type: "N", size: 15, pos: [217, 231], decimals: 2, mapping: "-", relevance: "NOT_USED", rule: "Campo não utilizado pelo sistema." },
+      { seq: "37", name: "Valor do IPI", type: "N", size: 15, pos: [232, 246], decimals: 2, mapping: "-", relevance: "NOT_USED", rule: "Campo não utilizado pelo sistema." },
+      { seq: "38", name: "Valor Total da Mercadoria", type: "N", size: 15, pos: [247, 261], decimals: 2, mapping: "-", relevance: "MANDATORY", rule: "Soma total de todos os itens da nota fiscal em reais. Obrigatório." },
+      { seq: "39", name: "Valor Total da Nota", type: "N", size: 15, pos: [262, 276], decimals: 2, mapping: "W6_VL_NF / W6_VL_NFC", relevance: "MANDATORY", rule: "Custo total bruto da nota (Mercadorias + Impostos + Frete + Taxas). Obrigatório." },
+      { seq: "40", name: "Valor Base do IPI", type: "N", size: 15, pos: [277, 291], decimals: 2, mapping: "-", relevance: "NOT_USED", rule: "Campo não utilizado pelo sistema." },
+      { seq: "41", name: "Filler", type: "C", size: 2, pos: [292, 293], mapping: "-", relevance: "NOT_USED", rule: "Espaço em branco reservado." },
+      { seq: "42", name: "Código do Exportador", type: "C", size: 4, pos: [294, 297], mapping: "A2_COD / F1_FORNECE", relevance: "MANDATORY", rule: "Código do Fornecedor/Exportador no Protheus. Obrigatório." },
+      { seq: "43", name: "Nome do Exportador", type: "C", size: 60, pos: [298, 357], mapping: "A2_NOME", relevance: "OPTIONAL", rule: "Razão social ou nome do exportador estrangeiro." },
+      { seq: "44", name: "Numero do PO", type: "C", size: 17, pos: [358, 374], mapping: "W6_PO", relevance: "OPTIONAL", rule: "Número da Purchase Order (Pedido de Compra)." },
+      { seq: "45", name: "Perc. Redução de Base de ICMS", type: "N", size: 6, pos: [375, 380], decimals: 2, mapping: "WN_PREDICM", relevance: "OPTIONAL", rule: "Percentual de redução na base de cálculo de ICMS (se houver benefício)." },
+      { seq: "46", name: "Número da DUIMP", type: "C", size: 15, pos: [381, 395], mapping: "W6_DI_NUM", relevance: "OPTIONAL", rule: "Número da Declaração Única de Importação (DUIMP). Nova adição de V12." },
+      { seq: "47", name: "Versão do Registro", type: "C", size: 4, pos: [396, 399], mapping: "W6_VERSAO", relevance: "MANDATORY", rule: "Controle de versão do layout do arquivo. Obrigatório na V12." }
+    ];
+
+    const ITEMS_LAYOUT = [
+      { seq: "01", name: "Tipo", type: "C", size: 1, pos: [1, 1], mapping: "Fixo '2'", relevance: "MANDATORY", rule: "Identificador de registro do tipo Item da Nota Fiscal." },
+      { seq: "02", name: "Código da Empresa", type: "N", size: 2, pos: [2, 3], mapping: "Fixo '01'", relevance: "MANDATORY", rule: "Código identificador da empresa." },
+      { seq: "03", name: "Código da Filial", type: "N", size: 2, pos: [4, 5], mapping: "Fixo '01'", relevance: "MANDATORY", rule: "Código identificador da filial." },
+      { seq: "04", name: "Número da Nota", type: "N", size: 9, pos: [6, 14], mapping: "D1_DOC / WN_DOC", relevance: "MANDATORY", rule: "Número da Nota Fiscal (deve corresponder ao campo 04 do registro Capa)." },
+      { seq: "05", name: "Número do Lançamento", type: "N", size: 6, pos: [15, 20], mapping: "-", relevance: "NOT_USED", rule: "Campo não utilizado para importação." },
+      { seq: "06", name: "Classificação Fiscal", type: "N", size: 10, pos: [21, 30], mapping: "WN_TEC / D1_TEC", relevance: "MANDATORY", rule: "Código de NCM do produto. Deve estar previamente cadastrado no Protheus." },
+      { seq: "07", name: "Código do Produto", type: "C", size: 20, pos: [31, 50], mapping: "D1_COD / WN_PRODUTO", relevance: "MANDATORY", rule: "Código interno do produto no Protheus. Deve estar previamente cadastrado." },
+      { seq: "08", name: "Código - Trib. - ICMS", type: "N", size: 1, pos: [51, 51], mapping: "-", relevance: "NOT_USED", rule: "Código de tributação de ICMS. Não utilizado." },
+      { seq: "09", name: "Código - Trib. - IPI", type: "N", size: 1, pos: [52, 52], mapping: "-", relevance: "NOT_USED", rule: "Código de tributação de IPI. Não utilizado." },
+      { seq: "10", name: "Número do Item", type: "N", size: 2, pos: [53, 54], mapping: "-", relevance: "NOT_USED", rule: "Número sequencial do item. Não utilizado diretamente." },
+      { seq: "11", name: "Quantidade", type: "N", size: 12, pos: [55, 66], decimals: 4, mapping: "D1_QUANT / WN_QUANT", relevance: "MANDATORY", rule: "Quantidade comercial de peças/unidades importadas. Obrigatório." },
+      { seq: "12", name: "Unidade", type: "C", size: 3, pos: [67, 69], mapping: "D1_UM / WN_UNI", relevance: "MANDATORY", rule: "Sigla da unidade de medida do produto (Ex: PCS, UN, KG)." },
+      { seq: "13", name: "Vlr. – IPI", type: "N", size: 15, pos: [70, 84], decimals: 2, mapping: "D1_VALIPI / WN_VALIPI", relevance: "OPTIONAL", rule: "Valor de IPI calculado por item em Reais." },
+      { seq: "14", name: "Valor Mercadoria (CIF+II)", type: "N", size: 15, pos: [85, 99], decimals: 2, mapping: "D1_VUNIT / WN_VALOR", relevance: "MANDATORY", rule: "Valor total do item (geralmente CIF + II) servindo como base de mercadoria." },
+      { seq: "15", name: "Flag de Entrada", type: "C", size: 1, pos: [100, 100], mapping: "Fixo 'I'", relevance: "MANDATORY", rule: "Flag de entrada para fluxo interno." },
+      { seq: "16", name: "Quantidade do Recebimento", type: "N", size: 11, pos: [101, 111], decimals: 4, mapping: "-", relevance: "NOT_USED", rule: "Campo não utilizado." },
+      { seq: "17", name: "Descrição do Produto", type: "C", size: 150, pos: [112, 261], mapping: "WN_DESCR", relevance: "OPTIONAL", rule: "Descrição do item de acordo com a fatura comercial. Sem acentos." },
+      { seq: "18", name: "Valor Fob R$", type: "N", size: 15, pos: [262, 276], decimals: 2, mapping: "WN_FOB_R / D1_FOB_R", relevance: "MANDATORY", rule: "Valor FOB do item convertido em reais. Obrigatório." },
+      { seq: "19", name: "Valor Frete R$", type: "N", size: 15, pos: [277, 291], decimals: 2, mapping: "WN_FRETE / F1_FRETE", relevance: "OPTIONAL", rule: "Rateio do frete internacional do item em Reais." },
+      { seq: "20", name: "Valor do Seguro R$", type: "N", size: 15, pos: [292, 306], decimals: 2, mapping: "WN_SEGURO / F1_SEGURO", relevance: "OPTIONAL", rule: "Rateio do seguro internacional do item em Reais." },
+      { seq: "21", name: "Valor II R$", type: "N", size: 15, pos: [307, 321], decimals: 2, mapping: "D1_II / WN_IIVAL", relevance: "OPTIONAL", rule: "Valor do Imposto de Importação do item em Reais." },
+      { seq: "22", name: "Alíquota IPI", type: "N", size: 5, pos: [322, 326], decimals: 2, mapping: "D1_IPI / WN_IPITX", relevance: "OPTIONAL", rule: "Alíquota percentual de IPI aplicada ao produto." },
+      { seq: "23", name: "Valor Despesas", type: "N", size: 15, pos: [327, 341], decimals: 2, mapping: "D1_DESPESA / WN_DESPESAS", relevance: "OPTIONAL", rule: "Outras despesas acessórias vinculadas ao item em Reais." },
+      { seq: "24", name: "Nro Processo no Easy", type: "C", size: 17, pos: [342, 358], mapping: "WN_HAWB", relevance: "MANDATORY", rule: "Deve bater exatamente com o Número do Processo do registro Capa. Obrigatório." },
+      { seq: "25", name: "Numero da EX da NCM", type: "C", size: 3, pos: [359, 361], mapping: "WN_EX_NCM", relevance: "OPTIONAL", rule: "Número da exceção tarifária de NCM (se houver)." },
+      { seq: "26", name: "Numero da Invoice", type: "C", size: 15, pos: [362, 376], mapping: "WN_INVOICE", relevance: "MANDATORY", rule: "Número da Fatura Comercial comercial vinculada ao item. Obrigatório." },
+      { seq: "27", name: "Valor do ICMS a recolher", type: "N", size: 15, pos: [377, 391], decimals: 2, mapping: "D1_VALICM / WN_VALICM", relevance: "OPTIONAL", rule: "Valor total do imposto de ICMS recolhido por dentro para o item." },
+      { seq: "28", name: "Peso Liquido do item", type: "N", size: 11, pos: [392, 402], decimals: 4, mapping: "D1_PESO / WN_PESOL", relevance: "MANDATORY", rule: "Peso líquido do item em kg (Máximo 4 casas decimais). Obrigatório." },
+      { seq: "29", name: "Item do Pedido de Compra", type: "C", size: 4, pos: [403, 406], mapping: "WN_ITEM / D1_ITEMPC", relevance: "MANDATORY", rule: "Número sequencial correspondente ao item do pedido de compra. Obrigatório." },
+      { seq: "30", name: "Alíquota de II", type: "N", size: 5, pos: [407, 411], decimals: 2, mapping: "D1_ALIQII / WN_IITX", relevance: "OPTIONAL", rule: "Alíquota percentual do Imposto de Importação." },
+      { seq: "31", name: "Numero do pedido", type: "C", size: 17, pos: [412, 428], mapping: "WN_PO_EIC / D1_PEDIDO", relevance: "MANDATORY", rule: "Número da Purchase Order associada a este produto no ERP. Obrigatório." },
+      { seq: "32", name: "Nro do Pedido de Licenciamento", type: "C", size: 10, pos: [429, 438], mapping: "WN_PGI_NUM", relevance: "OPTIONAL", rule: "Número do pedido de licença prévia de importação (LI)." },
+      { seq: "33", name: "Série da Nota Fiscal", type: "C", size: 3, pos: [439, 441], mapping: "D1_SERIE", relevance: "OPTIONAL", rule: "Série da nota fiscal (deve ser a mesma do registro de capa)." },
+      { seq: "34", name: "Base de ICMS (por item)", type: "N", size: 15, pos: [442, 456], decimals: 2, mapping: "D1_BASEICM / WN_BASEICM", relevance: "OPTIONAL", rule: "Valor de base para o ICMS calculado individualmente para o item." },
+      { seq: "35", name: "Valor FOB na moeda de Origem", type: "N", size: 15, pos: [457, 471], decimals: 7, mapping: "-", relevance: "OPTIONAL", rule: "Valor FOB unitário na moeda de origem do faturamento (7 casas decimais)." },
+      { seq: "36", name: "Alíquota do PIS", type: "N", size: 6, pos: [472, 477], decimals: 2, mapping: "D1_ALQIMP6 / WN_PERPIS", relevance: "OPTIONAL", rule: "Alíquota do PIS de Importação aplicada." },
+      { seq: "37", name: "Valor por quantidade do PIS", type: "N", size: 9, pos: [478, 486], decimals: 2, mapping: "WN_VLUPIS", relevance: "OPTIONAL", rule: "Valor ad-valorem específico se PIS calculado por unidade de medida." },
+      { seq: "38", name: "Base de calculo do PIS", type: "N", size: 15, pos: [487, 501], decimals: 2, mapping: "D1_BASIMP6 / WN_BASPIS", relevance: "OPTIONAL", rule: "Valor correspondente à base de cálculo de PIS do item." },
+      { seq: "39", name: "Valor do PIS", type: "N", size: 15, pos: [502, 516], decimals: 2, mapping: "D1_VALIMP6 / WN_VLRPIS", relevance: "OPTIONAL", rule: "Valor efetivo a recolher de PIS do item em Reais." },
+      { seq: "40", name: "Alíquota do COFINS", type: "N", size: 6, pos: [517, 522], decimals: 2, mapping: "D1_ALQIMP5 / WN_PERCOF", relevance: "OPTIONAL", rule: "Alíquota do COFINS de Importação aplicada." },
+      { seq: "41", name: "Valor por quantidade do COFINS", type: "N", size: 9, pos: [523, 531], decimals: 2, mapping: "WN_VLUCOF", relevance: "OPTIONAL", rule: "Valor específico se COFINS calculado por unidade." },
+      { seq: "42", name: "Base de calculo do COFINS", type: "N", size: 15, pos: [532, 546], decimals: 2, mapping: "D1_BASIMP5 / WN_BASCOF", relevance: "OPTIONAL", rule: "Base de cálculo de COFINS calculada para o item." },
+      { seq: "43", name: "Valor do COFINS", type: "N", size: 15, pos: [547, 561], decimals: 2, mapping: "D1_VALIMP5 / WN_VLRCOF", relevance: "OPTIONAL", rule: "Valor efetivo de COFINS em Reais para este item." },
+      { seq: "44", name: "Número da adição", type: "C", size: 3, pos: [562, 564], mapping: "WN_ADICAO", relevance: "OPTIONAL", rule: "Número da adição do item no Siscomex (Ex: 001, 002)." },
+      { seq: "45", name: "Sequencia do item da adição", type: "C", size: 3, pos: [565, 567], mapping: "WN_SEQ_ADI", relevance: "OPTIONAL", rule: "Sequencial do item dentro da adição declarada (Ex: 001, 002)." },
+      { seq: "46", name: "Valor do desconto", type: "N", size: 15, pos: [568, 582], decimals: 2, mapping: "WN_DESCONI", relevance: "OPTIONAL", rule: "Valor de desconto comercial aplicado individualmente ao item." },
+      { seq: "47", name: "Valor do IOF", type: "N", size: 15, pos: [583, 597], decimals: 2, mapping: "WN_VLRIOF", relevance: "OPTIONAL", rule: "Imposto sobre operações financeiras incidente." },
+      { seq: "48", name: "Despesas Aduaneiras", type: "N", size: 15, pos: [598, 612], decimals: 2, mapping: "WN_DESPADU", relevance: "OPTIONAL", rule: "Soma de despesas aduaneiras e taxas Siscomex do item." },
+      { seq: "49", name: "Alíquota específica do IPI", type: "N", size: 15, pos: [613, 627], decimals: 4, mapping: "WN_ALUIPI", relevance: "OPTIONAL", rule: "Alíquota específica em valor por unidade se aplicável." },
+      { seq: "50", name: "Qtde total - IPI", type: "N", size: 11, pos: [628, 638], decimals: 4, mapping: "WN_QTUIPI", relevance: "OPTIONAL", rule: "Quantidade total para base específica de IPI." },
+      { seq: "51", name: "Qtde total - PIS", type: "N", size: 11, pos: [639, 649], decimals: 4, mapping: "WN_QTUPIS", relevance: "OPTIONAL", rule: "Quantidade total para base específica de PIS." },
+      { seq: "52", name: "Qtde total - COFINS", type: "N", size: 11, pos: [650, 660], decimals: 4, mapping: "WN_QTUCOF", relevance: "OPTIONAL", rule: "Quantidade total para base específica de COFINS." },
+      { seq: "53", name: "Lote", type: "C", size: 10, pos: [661, 670], mapping: "D1_LOTECTL / WN_LOTECTL", relevance: "OPTIONAL", rule: "Número de controle do lote caso o produto tenha rastreabilidade ativada." },
+      { seq: "54", name: "Validade", type: "D", size: 8, pos: [671, 678], mapping: "D1_DTVALID / WN_DTVALID", relevance: "OPTIONAL", rule: "Data de validade do lote. Formato AAAAMMDD." },
+      { seq: "55", name: "Alíquota de ICMS do Item", type: "N", size: 5, pos: [679, 683], decimals: 2, mapping: "D1_PICM / WN_ICMS_A", relevance: "OPTIONAL", rule: "Alíquota de ICMS individual do item (relevante na V12)." },
+      { seq: "56", name: "Alíquota de Majoração de COFINS", type: "N", size: 6, pos: [684, 689], decimals: 2, mapping: "-", relevance: "OPTIONAL", rule: "Alíquota adicional de majoração se aplicável à NCM." },
+      { seq: "57", name: "Percentual Diferimento de ICMS", type: "N", size: 8, pos: [690, 697], decimals: 4, mapping: "WN_PICMDIF", relevance: "OPTIONAL", rule: "Percentual de ICMS diferido da operação." },
+      { seq: "58", name: "Código da LI", type: "C", size: 10, pos: [698, 707], mapping: "WP_REGIST", relevance: "OPTIONAL", rule: "Código da Licença de Importação do Siscomex." },
+      { seq: "59", name: "Código da LI Substitutiva", type: "C", size: 10, pos: [708, 717], mapping: "WP_SUBST", relevance: "OPTIONAL", rule: "Código de LI substituta se houver alteração." }
+    ];ercentual de ICMS diferido da operação." },
+      { seq: "58", name: "Código da LI", type: "C", size: 10, pos: [697, 706], mapping: "WP_REGIST", relevance: "OPTIONAL", rule: "Código da Licença de Importação do Siscomex." },
+      { seq: "59", name: "Código da LI Substitutiva", type: "C", size: 10, pos: [707, 716], mapping: "WP_SUBST", relevance: "OPTIONAL", rule: "Código de LI substituta se houver alteração." }
+    ];
+
+    // INITIAL RENDER OF TABLES
+    function renderTables() {
+      renderTableBody("headerTableBody", HEADER_LAYOUT);
+      renderTableBody("itemsTableBody", ITEMS_LAYOUT);
+    }
+
+    function renderTableBody(containerId, layout) {
+      const tbody = document.getElementById(containerId);
+      tbody.innerHTML = "";
+      
+      layout.forEach(field => {
+        const row = document.createElement("tr");
+        
+        // Add class based on relevance or special features
+        if (field.relevance === "MANDATORY") {
+          row.classList.add("mandatory-row");
+        } else if (field.mapping.includes("Fixo")) {
+          row.classList.add("fixed-row");
+        }
+
+        // Generate Badges
+        const typeBadge = `<span class="badge badge-${field.type.toLowerCase()}">${field.type === 'C' ? 'Char' : field.type === 'N' ? 'Num' : 'Data'}</span>`;
+        const relBadge = `<span class="badge badge-${field.relevance.toLowerCase()}">${field.relevance === 'MANDATORY' ? 'Obrigatório' : field.relevance === 'OPTIONAL' ? 'Opcional' : 'Não Utilizado'}</span>`;
+        const sizeText = field.decimals ? `${field.size} (dec: ${field.decimals})` : `${field.size}`;
+        const mappingText = field.mapping !== "-" ? `<span class="protheus-var">${field.mapping}</span>` : `<span style="color: var(--text-muted);">-</span>`;
+
+        row.innerHTML = `
+          <td style="font-family: var(--font-mono); font-weight: 500;">${field.seq}</td>
+          <td style="font-weight: 600; color: #ffffff;">${field.name}</td>
+          <td>${typeBadge}</td>
+          <td><span class="size-badge">${sizeText}</span></td>
+          <td><span class="pos-badge">${padZero(field.pos[0], 3)} - ${padZero(field.pos[1], 3)}</span></td>
+          <td>${mappingText}</td>
+          <td>${relBadge}</td>
+          <td style="font-size: 0.85rem; color: #9ca3af;">${field.rule}</td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    function padZero(num, size) {
+      let s = num + "";
+      while (s.length < size) s = "0" + s;
+      return s;
+    }
+
+    // TABS SYSTEM
+    function switchTab(tabId) {
+      document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+      
+      document.getElementById(tabId).classList.add("active");
+      
+      // Find the button clicking it
+      const btn = Array.from(document.querySelectorAll(".tab-btn")).find(b => b.innerText.includes(
+        tabId === "tab-header" ? "Capa" : tabId === "tab-items" ? "Item" : tabId === "tab-taxes" ? "Regras" : "Validador"
+      ));
+      if (btn) btn.classList.add("active");
+
+      // Trigger map ruler build if tab-playground is loaded
+      if (tabId === "tab-playground") {
+        buildVisualRuler();
+      }
+    }
+
+    // SEARCH FILTER
+    function filterTable(tableId, inputId) {
+      const q = document.getElementById(inputId).value.toLowerCase();
+      const rows = document.getElementById(tableId).querySelectorAll("tbody tr");
+      
+      rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        if (text.includes(q)) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
+      });
+    }
+
+    // RELEVANCE SELECT FILTER
+    function filterRelevance(tableId, selectId) {
+      const val = document.getElementById(selectId).value;
+      const rows = document.getElementById(tableId).querySelectorAll("tbody tr");
+      
+      rows.forEach(row => {
+        const badge = row.querySelector(".badge-req, .badge-opt, .badge-unused");
+        if (!badge) return;
+        
+        const relText = badge.className;
+        
+        if (val === "ALL") {
+          row.style.display = "";
+        } else if (val === "MANDATORY" && relText.includes("badge-req")) {
+          row.style.display = "";
+        } else if (val === "OPTIONAL" && relText.includes("badge-opt")) {
+          row.style.display = "";
+        } else if (val === "NOT_USED" && relText.includes("badge-unused")) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
+      });
+    }
+
+    // PLAYGROUND VALIDADOR ENGINE
+    let currentLayoutType = null;
+    let highlightActiveRange = null;
+
+    function buildVisualRuler() {
+      const mapContainer = document.getElementById("visual-ruler-map");
+      mapContainer.innerHTML = "";
+
+      const inputVal = document.getElementById("txt-input").value;
+      const cleanLine = inputVal.replace(/[\r\n]/g, ""); // Strip return chars
+      const len = cleanLine.length;
+      const firstChar = cleanLine.trim()[0];
+      let limit = 400; // default view limit
+
+      if (firstChar === "1") {
+        limit = 399;
+        currentLayoutType = "header";
+      } else if (firstChar === "2") {
+        limit = 717;
+        currentLayoutType = "item";
+      } else {
+        currentLayoutType = null;
+        mapContainer.innerHTML = `<div style="padding: 1rem; color: var(--text-muted); text-align: center; width: 100%;">Digite ou cole uma linha para ver o mapa visual.</div>`;
+        return;
+      }
+
+      const activeLayout = currentLayoutType === "header" ? HEADER_LAYOUT : ITEMS_LAYOUT;
+
+      for (let i = 1; i <= limit; i++) {
+        const cell = document.createElement("div");
+        cell.className = "ruler-cell";
+        cell.innerText = i % 100 === 0 ? "00" : i % 10 === 0 ? i / 10 % 10 : i % 10;
+        cell.title = `Caractere #${i}`;
+        
+        // Find which field owns this index
+        const owningField = activeLayout.find(f => i >= f.pos[0] && i <= f.pos[1]);
+        if (owningField) {
+          cell.setAttribute("data-seq", owningField.seq);
+          
+          // Color code cell slightly depending on relevance/presence
+          if (len > 0 && i > len) {
+            cell.style.opacity = "0.35";
+            cell.title = `Caractere #${i} (${owningField.name}) - Ausente no registro (Layout curto)`;
+          } else if (owningField.relevance === "MANDATORY") {
+            cell.classList.add("active-field-primary");
+          } else if (owningField.relevance === "OPTIONAL") {
+            cell.classList.add("active-field");
+          } else {
+            cell.classList.add("active-field-accent");
+          }
+          
+          if (len === 0 || i <= len) {
+            cell.onmouseenter = () => highlightParsedRow(owningField.seq);
+            cell.onmouseleave = () => unhighlightParsedRow();
+          }
+        }
+
+        mapContainer.appendChild(cell);
+      }
+    }
+
+    function highlightParsedRow(seq) {
+      const container = document.getElementById("parsed-results-container");
+      const targetRow = container.querySelector(`[data-seq="${seq}"]`);
+      if (targetRow) {
+        targetRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        targetRow.style.background = "rgba(99, 102, 241, 0.15)";
+        targetRow.style.borderColor = "var(--secondary)";
+      }
+    }
+
+    function unhighlightParsedRow() {
+      const container = document.getElementById("parsed-results-container");
+      container.querySelectorAll(".parsed-field-row").forEach(row => {
+        row.style.background = "";
+        row.style.borderColor = "";
+      });
+    }
+
+    function loadExample(type) {
+      const input = document.getElementById("txt-input");
+      if (type === "header") {
+        // Construct mock valid 399-char Header line
+        // 1(1) + 01(2) + 01(2) + 000123456(9) + spaces(6) + 0012.00(7) + 3101  (6) + cfp(5) + cgc(14) + ipi(3) + PROC-EMB-10293   (17) + 02(2) + ref(6) + 20260522(8) + 20260522(8) + filler(6) + dtreg(8) + filler(2) + E(1) + NFE(3) + flag(1) + filler(1) + I(1) + DI-99201A (10) + 001(3) + sit(2) + sitE(5) + sitF(5) + UF(2) + transport(1) + 000000000150.00(15) + icms(15) + base(15) + imp(4) + trans(20) + seg(15) + ipiV(15) + 000000005400.00(15) + 000000005600.00(15) + ipiB(15) + fill(2) + EX02(4) + EXPORTADORA DE COMPONENTES INTERNACIONAIS LIMITADA BRASIL(60) + PedidoCompra0019(17) + 000.00(6) + DUIMP-88290A   (15) + 0002(4)
+        const mockHeader = "10101000123456      0012.003101        00000000000000   PROC-EMB-10293   02      2026052220260522      20260522  ENFE I          1   DI-99201A 001                         000000000150.00                                                                                               000000005400.0000000005600.00                    EX02EXPORTADORA DE COMPONENTES INTERNACIONAIS LIMITADA BRASILPedidoCompra0019000.00DUIMP-88290A   0002";
+        input.value = mockHeader;
+      } else {
+        // Construct mock valid 717-char Item line
+        // Quantity size is 12 (0000001.0000), shifts PCS, CIF+II, etc. by 1. Total length is 717 characters.
+        const mockItem = "20101000123456      85044090  PROD-UNIT-10928        0000001.0000PCS000000000005.00000000000120.00I           FONTE DE ALIMENTACAO CHAVEADA TIPO STRING TRIFASICA COM AJUSTE DE FREQUENCIA DE POTENCIA E INTERRUPTOR DE SEGURANCA COMPLETO PARA SOLAR  000000000100.00000000000010.00000000000005.00000000000012.0005.00000000000000.00PROC-EMB-10293   000INV-99120349   000000000025.0000001.4000PC0102.00PEDIDO-PO-9918239LIC-99182 001000000000120.000000100.000000000.65         000000000100.00000000000000.6503.00         000000000100.00000000000003.00001001000000000000.00000000000000.00000000000000.00000000000.0000                                           LOTE-992012030123118.00000.00000.0000LI-9920391 LI-SUB-102";
+        input.value = mockItem;
+      }
+      parseLiveLine();
+    }
+
+    function parseLiveLine() {
+      const input = document.getElementById("txt-input").value;
+      const cleanLine = input.replace(/[\r\n]/g, ""); // Strip return chars
+      
+      const charCountBadge = document.getElementById("badge-char-count");
+      const detectedTypeBadge = document.getElementById("badge-detected-type");
+      const statusBadge = document.getElementById("badge-validation-status");
+      const container = document.getElementById("parsed-results-container");
+      
+      const len = cleanLine.length;
+      charCountBadge.innerText = `Caracteres: ${len}`;
+
+      if (len === 0) {
+        detectedTypeBadge.innerText = "Tipo Detectado: Nenhum";
+        statusBadge.innerText = "Status: Aguardando Entrada";
+        statusBadge.className = "parsed-badge";
+        container.innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--text-muted); font-size: 0.9rem;">Digite ou cole uma linha de arquivo para iniciar.</div>`;
+        buildVisualRuler();
+        return;
+      }
+
+      const firstChar = cleanLine[0];
+      let activeLayout = null;
+      let lenVariants = [];
+      let typeLabel = "";
+
+      if (firstChar === "1") {
+        activeLayout = HEADER_LAYOUT;
+        lenVariants = [380, 399];
+        typeLabel = "Capa (Tipo 1)";
+        detectedTypeBadge.innerText = `Tipo Detectado: ${typeLabel}`;
+      } else if (firstChar === "2") {
+        activeLayout = ITEMS_LAYOUT;
+        lenVariants = [697, 717];
+        typeLabel = "Item (Tipo 2)";
+        detectedTypeBadge.innerText = `Tipo Detectado: ${typeLabel}`;
+      } else {
+        detectedTypeBadge.innerText = "Tipo Detectado: Desconhecido";
+        statusBadge.innerText = "Status: Tipo Inválido (Deve começar com 1 ou 2)";
+        statusBadge.className = "parsed-badge invalid";
+        container.innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--danger); font-size: 0.9rem;">O primeiro caractere deve ser '1' (Capa) ou '2' (Item).</div>`;
+        buildVisualRuler();
+        return;
+      }
+
+      // Rebuild ruler for the correct type
+      buildVisualRuler();
+
+      // Check length validity
+      let isValid = true;
+      if (lenVariants.includes(len)) {
+        statusBadge.innerText = `Status: Alinhamento Correto (${len} chars)`;
+        statusBadge.className = "parsed-badge valid";
+      } else {
+        isValid = false;
+        statusBadge.innerText = `Status: desalinhado! Esperado: ${lenVariants.join(" ou ")} (Atual: ${len})`;
+        statusBadge.className = "parsed-badge invalid";
+      }
+
+      // Split line into fields
+      container.innerHTML = "";
+      document.getElementById("parsed-fields-count").innerText = `0/${activeLayout.length} campos`;
+
+      let parsedCount = 0;
+
+      activeLayout.forEach(field => {
+        const start = field.pos[0] - 1; // 0-based
+        const end = field.pos[1]; // exclusive slice
+        
+        let extractedVal = "";
+        let isFieldErr = false;
+        let errText = "";
+
+        if (start < len) {
+          extractedVal = cleanLine.substring(start, Math.min(end, len));
+          parsedCount++;
+        } else {
+          isFieldErr = field.relevance === "MANDATORY";
+          errText = "Fora do limite da string";
+        }
+
+        const isEmpty = extractedVal.trim().length === 0;
+        
+        if (field.relevance === "MANDATORY" && isEmpty && start < len) {
+          isFieldErr = true;
+          errText = "Campo obrigatório vazio";
+        }
+
+        // Check if fixed values match
+        if (field.mapping.includes("Fixo") && start < len) {
+          const expectedFixed = field.mapping.split("'")[1];
+          if (extractedVal.trim() !== expectedFixed) {
+            isFieldErr = true;
+            errText = `Valor fixo incorreto (esperado '${expectedFixed}')`;
+          }
+        }
+
+        // Render Field Row
+        const row = document.createElement("div");
+        row.className = "parsed-field-row";
+        row.setAttribute("data-seq", field.seq);
+
+        if (isFieldErr) {
+          row.classList.add("error-field");
+        } else if (isEmpty) {
+          row.classList.add("empty-field");
+        }
+
+        // format display value
+        const displayVal = isEmpty ? "(Vazio)" : extractedVal;
+        const subMeta = `Seq ${field.seq} | Posição: ${field.pos[0]}-${field.pos[1]} | Protheus: ${field.mapping}`;
+
+        row.innerHTML = `
+          <div class="parsed-field-info">
+            <div class="parsed-field-name" style="${isFieldErr ? 'color: var(--danger);' : ''}">${field.name}</div>
+            <div class="parsed-field-meta">${subMeta}</div>
+            ${isFieldErr ? `<span style="color: var(--danger); font-size: 0.7rem; font-weight: 600;">⚠️ ${errText}</span>` : ''}
+          </div>
+          <div class="parsed-field-val">${displayVal}</div>
+        `;
+
+        // Highlight visual cells on hover of row
+        row.onmouseenter = () => highlightVisualCells(field.pos[0], field.pos[1]);
+        row.onmouseleave = () => unhighlightVisualCells();
+
+        container.appendChild(row);
+      });
+
+      document.getElementById("parsed-fields-count").innerText = `${parsedCount}/${activeLayout.length} campos`;
+    }
+
+    function highlightVisualCells(start, end) {
+      const map = document.getElementById("visual-ruler-map");
+      for (let i = start; i <= end; i++) {
+        const cell = map.childNodes[i - 1];
+        if (cell) {
+          cell.style.transform = "scale(1.15)";
+          cell.style.background = "var(--primary)";
+          cell.style.borderColor = "#ffffff";
+          cell.style.color = "#000000";
+        }
+      }
+    }
+
+    function unhighlightVisualCells() {
+      buildVisualRuler();
+    }
+
+    // INITIAL LAUNCH ACTIONS
+    window.onload = () => {
+      renderTables();
+    }
+  </script>
+</body>
+</html>
