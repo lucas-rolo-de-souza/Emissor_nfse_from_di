@@ -38,27 +38,6 @@ type HeaderSection = {
   readOnly?: (keyof HeaderData)[];
 };
 
-const HEADER_SECTIONS: HeaderSection[] = [
-  {
-    title: "Identificação da Nota Fiscal",
-    fields: ["numero_nota", "data_emissao", "data_entrada", "cfop"],
-  },
-  {
-    title: "Dados da DI / DUIMP",
-    fields: ["di_number", "di_date", "duimp_number"],
-    readOnly: ["di_number", "di_date"],
-  },
-  {
-    title: "Entidades",
-    fields: ["exporter_name", "exporter_country", "cod_importador", "cod_transportador", "cod_exportador"],
-    readOnly: ["exporter_name", "exporter_country"],
-  },
-  {
-    title: "Informações Adicionais",
-    fields: ["numero_processo", "numero_po", "invoice_number", "provenance_country_code", "urf_entry", "transport_via"],
-  },
-];
-
 const fmt = (val: number | undefined | null) =>
   (val || 0).toLocaleString("pt-BR", {
     minimumFractionDigits: 2,
@@ -81,7 +60,10 @@ function FieldGroup({
       <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500">{section.title}</h3>
       <div className="grid grid-cols-2 gap-3">
         {section.fields.map((field) => {
-          const isRequired = REQUIRED_HEADER_FIELDS.includes(field);
+          const isRequired =
+            REQUIRED_HEADER_FIELDS.includes(field) ||
+            (field === "di_number" && data.document_type !== "DUIMP") ||
+            (field === "duimp_number" && data.document_type === "DUIMP");
           const isReadOnly = section.readOnly?.includes(field) ?? false;
           const hasError = errors.includes(field);
           const label = HEADER_LABELS[field] || field.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
@@ -119,6 +101,12 @@ export function ReviewStep({ data, onDataChange, onGenerate, onBack, isLoading }
       if (!data.header[field]) headerErrors.push(field);
     });
 
+    if (data.header.document_type === "DUIMP") {
+      if (!data.header.duimp_number) headerErrors.push("duimp_number");
+    } else {
+      if (!data.header.di_number) headerErrors.push("di_number");
+    }
+
     data.adicoes.forEach((adicao, aIdx) => {
       adicao.items.forEach((item, iIdx) => {
         REQUIRED_ITEM_FIELDS.forEach((field) => {
@@ -152,6 +140,32 @@ export function ReviewStep({ data, onDataChange, onGenerate, onBack, isLoading }
     onDataChange({ ...data, adicoes: newAdicoes });
   };
 
+  const headerSections = useMemo((): HeaderSection[] => {
+    const isDuimp = data.header.document_type === "DUIMP";
+    return [
+      {
+        title: "Identificação da Nota Fiscal",
+        fields: ["numero_nota", "data_emissao", "data_entrada", "cfop", "especie", "serie"],
+      },
+      {
+        title: isDuimp ? "Dados da DUIMP" : "Dados da DI",
+        fields: isDuimp
+          ? ["duimp_number", "versao_registro", "di_date"]
+          : ["di_number", "di_date"],
+        readOnly: ["di_date"],
+      },
+      {
+        title: "Entidades",
+        fields: ["exporter_name", "exporter_country", "cod_importador", "cod_transportador", "cod_exportador"],
+        readOnly: ["exporter_name", "exporter_country"],
+      },
+      {
+        title: "Informações Adicionais",
+        fields: ["numero_processo", "numero_po", "numero_pedido", "invoice_number", "mv_eic0010_source", "aliq_icms_capa", "mv_eic0076_mode", "provenance_country_code", "urf_entry", "transport_via"],
+      },
+    ];
+  }, [data.header.document_type]);
+
   return (
     <Card className="w-full max-w-5xl">
       {/* Header */}
@@ -164,7 +178,7 @@ export function ReviewStep({ data, onDataChange, onGenerate, onBack, isLoading }
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h2 className="text-2xl font-bold text-slate-900">Revisar Dados da DI</h2>
+          <h2 className="text-2xl font-bold text-slate-900">Revisar Dados ({data.header.document_type || "DI"})</h2>
         </div>
 
         <Badge variant={validation.isValid ? "success" : "warning"} className="gap-1.5 px-3 py-1.5 text-sm">
@@ -193,7 +207,37 @@ export function ReviewStep({ data, onDataChange, onGenerate, onBack, isLoading }
         </TabsList>
 
         <TabsContent value="header" className="space-y-6">
-          {HEADER_SECTIONS.map((section, i) => (
+          <div>
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-350 mb-3">Tipo do Documento (Layout de Exportação)</h3>
+            <div className="flex gap-3 mb-6">
+              <button
+                type="button"
+                onClick={() => handleHeaderChange("document_type", "DI")}
+                className={`flex-1 py-2 px-4 rounded-md border text-sm font-semibold transition-all ${
+                  data.header.document_type !== "DUIMP"
+                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
+                }`}
+              >
+                DI (Layout 380/717)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleHeaderChange("document_type", "DUIMP")}
+                className={`flex-1 py-2 px-4 rounded-md border text-sm font-semibold transition-all ${
+                  data.header.document_type === "DUIMP"
+                    ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                    : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
+                }`}
+              >
+                DUIMP (Layout 399/717)
+              </button>
+            </div>
+          </div>
+
+          <Separator className="my-6" />
+
+          {headerSections.map((section, i) => (
             <div key={section.title}>
               <FieldGroup
                 section={section}
@@ -201,7 +245,7 @@ export function ReviewStep({ data, onDataChange, onGenerate, onBack, isLoading }
                 errors={validation.headerErrors}
                 onChange={handleHeaderChange}
               />
-              {i < HEADER_SECTIONS.length - 1 && <Separator className="mt-6" />}
+              {i < headerSections.length - 1 && <Separator className="mt-6" />}
             </div>
           ))}
 

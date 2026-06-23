@@ -31,8 +31,8 @@ export function EditableCell({ fieldDef, rawValue, onCommit }: EditableCellProps
       readOnly={isReadOnly}
       className={`w-full min-w-[100px] rounded px-1.5 py-0.5 font-mono text-xs outline-none transition-all
         ${isReadOnly
-          ? "bg-transparent text-slate-400 cursor-not-allowed"
-          : "bg-blue-50/30 border border-transparent hover:border-blue-300 focus:border-blue-500 focus:bg-white text-blue-700"
+          ? "bg-transparent text-slate-400 dark:text-slate-500 cursor-not-allowed"
+          : "bg-blue-50/30 dark:bg-blue-950/20 border border-transparent hover:border-blue-300 dark:hover:border-blue-800 focus:border-blue-500 focus:bg-white dark:focus:bg-slate-900 text-blue-700 dark:text-blue-300"
         }`}
       maxLength={fieldDef.len}
       value={localVal}

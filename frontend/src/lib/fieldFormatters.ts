@@ -31,9 +31,6 @@ function formatDate(raw: string, format: NonNullable<FieldDef["dateFormat"]>): s
   if (format === "AAAAMMDD" && s.length === 8) {
     return `${s.slice(6, 8)}/${s.slice(4, 6)}/${s.slice(0, 4)}`;
   }
-  if (format === "MMAAAA" && s.length === 6) {
-    return `${s.slice(0, 2)}/${s.slice(2)}`;
-  }
   return s;
 }
 

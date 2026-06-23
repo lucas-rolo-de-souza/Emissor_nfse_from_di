@@ -22,7 +22,7 @@ export function TxtViewerStep({ onBack }: TxtViewerStepProps) {
   const [modifiedContent, setModifiedContent] = useState<string | null>(null);
   const [filename, setFilename] = useState<string>("");
   const [globalShowRaw, setGlobalShowRaw] = useState(false);
-  const [detectedLayout, setDetectedLayout] = useState<LayoutVersion>("v2");
+  const [detectedLayout, setDetectedLayout] = useState<LayoutVersion>("v3_DUIMP");
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const downloadMenuRef = useRef<HTMLDivElement>(null);
 
@@ -30,6 +30,10 @@ export function TxtViewerStep({ onBack }: TxtViewerStepProps) {
     () => (modifiedContent ? modifiedContent.split(/\r\n|\n|\r/) : []),
     [modifiedContent],
   );
+
+  const defaultExportLayout = useMemo(() => {
+    return detectedLayout === "v3_DI" ? "v3_DI" : "v3_DUIMP";
+  }, [detectedLayout]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -99,7 +103,7 @@ export function TxtViewerStep({ onBack }: TxtViewerStepProps) {
   const handleDownload = (targetLayout: LayoutVersion) => {
     if (!modifiedContent) return;
     const converted = convertLinesToLayout(modifiedContent, targetLayout);
-    triggerDownload(converted, targetLayout.toUpperCase());
+    triggerDownload(converted, targetLayout);
   };
 
   const handleReset = () => {
@@ -116,28 +120,27 @@ export function TxtViewerStep({ onBack }: TxtViewerStepProps) {
   return (
     <Card className="w-full max-w-6xl">
       {/* Header bar */}
-      <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
-        <div className="flex items-center gap-2">
+      <div className="mb-6 flex items-center justify-between flex-wrap gap-3">        <div className="flex items-center gap-2">
           <button
             onClick={onBack}
-            className="p-2 -ml-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+            className="p-2 -ml-2 rounded-full text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-350 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             aria-label="Voltar"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h2 className="text-xl font-bold text-slate-900">Auditar TXT</h2>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">Auditar TXT</h2>
         </div>
 
         {hasFile && (
           <div className="flex items-center gap-2">
             {/* Global raw/friendly toggle */}
-            <div className="flex rounded-lg border border-slate-200 overflow-hidden text-sm">
+            <div className="flex rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden text-sm">
               <button
                 onClick={() => setGlobalShowRaw(false)}
                 className={`px-3 py-1.5 flex items-center gap-1.5 transition-colors ${
                   !globalShowRaw
                     ? "bg-indigo-600 text-white"
-                    : "bg-white text-slate-600 hover:bg-slate-50"
+                    : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-450 hover:bg-slate-50 dark:hover:bg-slate-800"
                 }`}
               >
                 <AlignLeft className="w-3.5 h-3.5" />
@@ -148,7 +151,7 @@ export function TxtViewerStep({ onBack }: TxtViewerStepProps) {
                 className={`px-3 py-1.5 flex items-center gap-1.5 transition-colors ${
                   globalShowRaw
                     ? "bg-indigo-600 text-white"
-                    : "bg-white text-slate-600 hover:bg-slate-50"
+                    : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-450 hover:bg-slate-50 dark:hover:bg-slate-800"
                 }`}
               >
                 <Code className="w-3.5 h-3.5" />
@@ -160,11 +163,11 @@ export function TxtViewerStep({ onBack }: TxtViewerStepProps) {
             <div className="relative" ref={downloadMenuRef}>
               <div className="flex rounded-lg overflow-hidden border border-emerald-600">
                 <button
-                  onClick={() => handleDownload(detectedLayout)}
+                  onClick={() => handleDownload(defaultExportLayout)}
                   className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm flex items-center gap-1.5 transition-colors"
                 >
                   <Upload className="w-3.5 h-3.5" />
-                  Salvar {detectedLayout.toUpperCase()}
+                  Salvar como {defaultExportLayout === "v3_DUIMP" ? "DUIMP" : "DI"}
                 </button>
                 <button
                   onClick={() => setShowDownloadMenu((v) => !v)}
@@ -176,23 +179,23 @@ export function TxtViewerStep({ onBack }: TxtViewerStepProps) {
               </div>
 
               {showDownloadMenu && (
-                <div className="absolute right-0 top-full mt-1 w-52 bg-white border border-slate-200 rounded-lg shadow-lg z-10 overflow-hidden">
-                  <div className="px-3 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wide border-b border-slate-100">
-                    Converter e baixar
+                <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 rounded-lg shadow-lg z-10 overflow-hidden">
+                  <div className="px-3 py-1.5 text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide border-b border-slate-100 dark:border-slate-800">
+                    Formato de Exportação
                   </div>
                   <button
-                    onClick={() => handleDownload("v1")}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 transition-colors"
+                    onClick={() => handleDownload("v3_DUIMP")}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                   >
-                    <span className="font-medium text-slate-700">Layout V1</span>
-                    <span className="block text-[10px] text-slate-400">380 / 688 chars — formato antigo</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300 block">DUIMP (Layout 399/717)</span>
+                    <span className="block text-[10px] text-slate-400 dark:text-slate-500">Último padrão DUIMP (CRLF)</span>
                   </button>
                   <button
-                    onClick={() => handleDownload("v2")}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 transition-colors"
+                    onClick={() => handleDownload("v3_DI")}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                   >
-                    <span className="font-medium text-slate-700">Layout V2</span>
-                    <span className="block text-[10px] text-slate-400">399 / 716 chars — formato atual</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300 block">DI (Layout 380/717)</span>
+                    <span className="block text-[10px] text-slate-400 dark:text-slate-500">Último padrão DI (CRLF)</span>
                   </button>
                 </div>
               )}
@@ -206,20 +209,20 @@ export function TxtViewerStep({ onBack }: TxtViewerStepProps) {
         <div
           className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
             isDragging
-              ? "border-indigo-500 bg-indigo-50"
-              : "border-slate-300 hover:border-slate-400"
+              ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20"
+              : "border-slate-300 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-650"
           } ${isLoading ? "opacity-50 pointer-events-none" : ""}`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
         >
-          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center mb-4">
-            <FileText className="w-8 h-8 text-slate-500" />
+          <div className="w-16 h-16 mx-auto bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 rounded-2xl flex items-center justify-center mb-4">
+            <FileText className="w-8 h-8 text-slate-500 dark:text-slate-400" />
           </div>
-          <p className="text-lg font-medium text-slate-700 mb-2">
+          <p className="text-lg font-medium text-slate-700 dark:text-slate-300 mb-2">
             {isLoading ? "Processando..." : "Arraste o arquivo TXT aqui"}
           </p>
-          <p className="text-sm text-slate-500 mb-4">ou</p>
+          <p className="text-sm text-slate-500 dark:text-slate-450 mb-4">ou</p>
           <label className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors">
             <Upload className="w-4 h-4" />
             <span>Selecionar Arquivo</span>
@@ -234,7 +237,7 @@ export function TxtViewerStep({ onBack }: TxtViewerStepProps) {
       )}
 
       {error && (
-        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+        <div className="mt-4 p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 rounded-lg text-red-750 dark:text-red-400 text-sm">
           {error}
         </div>
       )}

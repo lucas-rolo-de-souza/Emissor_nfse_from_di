@@ -88,6 +88,7 @@ export interface AdicaoData {
 }
 
 export interface HeaderData {
+  document_type: string;
   // From XML
   di_number: string;
   duimp_number?: string;
@@ -111,11 +112,17 @@ export interface HeaderData {
   cfop: string;
   numero_processo?: string;
   numero_po: string;
+  numero_pedido?: string;
+  especie?: string;
+  serie?: string;
   perc_reducao: string;
   cod_importador: string;
   cod_transportador: string;
   cod_exportador: string;
   invoice_number: string;
+  mv_eic0010_source?: string;
+  aliq_icms_capa?: string;
+  mv_eic0076_mode?: string;
 }
 
 export interface ExtractedData {
@@ -145,7 +152,9 @@ export const isRequiredItemField = (field: keyof ItemData): boolean =>
 export const HEADER_LABELS: Partial<Record<keyof HeaderData, string>> = {
   di_number: "Número DI",
   duimp_number: "Número DUIMP",
-  di_date: "Data DI",
+  versao_registro: "Versão do Registro",
+  document_type: "Tipo do Documento",
+  di_date: "Data de Registro",
   exporter_name: "Exportador",
   exporter_country: "País Exportador",
   provenance_country_code: "País Procedência",
@@ -156,11 +165,17 @@ export const HEADER_LABELS: Partial<Record<keyof HeaderData, string>> = {
   data_entrada: "Data Entrada *",
   cfop: "CFOP *",
   numero_processo: "Nº Processo Easy *",
-  numero_po: "Número PO",
+  numero_po: "Número PO (externo)",
+  numero_pedido: "Nº Pedido Easy (SIGAEIC)",
+  especie: "Espécie NF",
+  serie: "Série",
   cod_importador: "Cód. Importador",
   cod_transportador: "Cód. Transportador",
   cod_exportador: "Cód. Exportador",
   invoice_number: "Número Invoice",
+  mv_eic0010_source: "Origem ICMS (MV_EIC0010)",
+  aliq_icms_capa: "Alíq. ICMS CAPA",
+  mv_eic0076_mode: "Modo MV_EIC0076",
 };
 
 export const ITEM_LABELS: Partial<Record<keyof ItemData, string>> = {

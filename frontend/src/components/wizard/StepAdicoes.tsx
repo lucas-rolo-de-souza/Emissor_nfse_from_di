@@ -88,9 +88,9 @@ function AdicaoForm({
   };
 
   return (
-    <div className="border border-slate-200 rounded-lg p-4 space-y-4">
+    <div className="border border-slate-200 dark:border-slate-800 rounded-lg p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <span className="font-mono text-sm font-semibold bg-slate-100 border px-2 py-0.5 rounded">
+        <span className="font-mono text-sm font-semibold bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2 py-0.5 rounded text-slate-800 dark:text-slate-200">
           Adição #{adicao.number}
         </span>
         {canRemove && (
@@ -152,21 +152,21 @@ function AdicaoForm({
       </div>
 
       <div>
-        <h4 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Impostos (Alíquota % / Valor R$)</h4>
+        <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">Impostos (Alíquota % / Valor R$)</h4>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr className="text-slate-500">
+              <tr className="text-slate-500 dark:text-slate-400">
                 <th className="text-left py-1 w-16">Imposto</th>
                 <th className="text-center py-1 w-24">Alíq. (%)</th>
                 <th className="text-center py-1 w-24">Base (R$)</th>
                 <th className="text-center py-1 w-24">Valor (R$)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {TAX_ROWS.map(({ key, label, valueField }) => (
                 <tr key={key}>
-                  <td className="py-1 font-semibold text-slate-600 pr-2">{label}</td>
+                  <td className="py-1 font-semibold text-slate-600 dark:text-slate-300 pr-2">{label}</td>
                   <td className="py-1 px-1">
                     <NumInput
                       value={adicao.taxes[key].rate}
@@ -231,7 +231,7 @@ export function StepAdicoes({ adicoes, onChange }: StepAdicoesProps) {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-slate-500 dark:text-slate-400">
         Adicione as adições da Declaração de Importação. Cada adição corresponde a um NCM diferente.
       </p>
 

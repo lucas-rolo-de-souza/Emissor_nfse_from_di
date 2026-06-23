@@ -54,21 +54,21 @@ export function ReportStep({ report, onRestart }: ReportStepProps) {
         className="mb-6 flex justify-center"
       >
         {isSuccess ? (
-          <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center text-green-600 shadow-lg shadow-green-500/20">
+          <div className="w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-950/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shadow-lg shadow-emerald-500/20">
             <CheckCircle className="w-10 h-10" />
           </div>
         ) : (
-          <div className="w-20 h-20 rounded-full bg-red-100 flex items-center justify-center text-red-600 shadow-lg shadow-red-500/20">
+          <div className="w-20 h-20 rounded-full bg-destructive/10 dark:bg-destructive/20 flex items-center justify-center text-destructive shadow-lg shadow-destructive/20">
             <XCircle className="w-10 h-10" />
           </div>
         )}
       </motion.div>
 
-      <h2 className="text-2xl font-bold text-slate-900 mb-2">
+      <h2 className="text-2xl font-bold text-foreground mb-2">
         {isSuccess ? "Processamento Concluído!" : "Falha no Processamento"}
       </h2>
 
-      <p className="text-slate-600 mb-8 px-4">
+      <p className="text-muted-foreground mb-8 px-4">
         {report?.message || "Ocorreu um erro desconhecido."}
       </p>
 

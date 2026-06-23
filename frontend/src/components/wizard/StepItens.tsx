@@ -38,9 +38,9 @@ function ItemRow({
   const update = (patch: Partial<ItemData>) => onUpdate({ ...item, ...patch });
 
   return (
-    <div className="border border-slate-100 rounded-lg p-3 space-y-3 bg-slate-50/50">
+    <div className="border border-slate-100 dark:border-slate-800 rounded-lg p-3 space-y-3 bg-slate-50/50 dark:bg-slate-900/30">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-500">Item #{item.sequence}</span>
+        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">Item #{item.sequence}</span>
         {canRemove && (
           <button
             onClick={onRemove}
@@ -144,10 +144,10 @@ function AdicaoItemsSection({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-slate-800">
+          <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
             Adição #{adicao.number} — NCM {adicao.ncm || "—"}
           </h3>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {adicao.items.length} item(s) • LI: {adicao.li_number || "N/A"}
           </p>
         </div>
@@ -158,7 +158,7 @@ function AdicaoItemsSection({
       </div>
 
       {adicao.items.length === 0 && (
-        <div className="text-center py-6 text-sm text-slate-400 border border-dashed border-slate-200 rounded-lg">
+        <div className="text-center py-6 text-sm text-slate-400 dark:text-slate-500 border border-dashed border-slate-200 dark:border-slate-800 rounded-lg">
           Nenhum item adicionado. Clique em "Adicionar Item" para começar.
         </div>
       )}
@@ -183,7 +183,7 @@ export function StepItens({ adicoes, onChange }: StepItensProps) {
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-slate-500">
+      <p className="text-sm text-slate-500 dark:text-slate-400">
         Adicione os itens (mercadorias) para cada adição. O código interno do produto é obrigatório.
       </p>
 

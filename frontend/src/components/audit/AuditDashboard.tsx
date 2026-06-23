@@ -38,13 +38,13 @@ export function AuditDashboard({
 
   return (
     <div className="space-y-3">
-      <div className="bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-lg text-xs flex items-start gap-2">
+      <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 text-amber-800 dark:text-amber-300 p-3 rounded-lg text-xs flex items-start gap-2">
         <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
         <div>
           <span className="font-semibold">Modo Auditoria</span> — Expanda cada linha para inspecionar e editar campos. O campo "Editar" sempre mostra os bytes raw. O campo "Valor" alterna entre formato amigável e raw.
-          {detectedLayout === "v1" && (
+          {detectedLayout === "v3_DI" && (
             <span className="ml-1">
-              Campos marcados com <span className="font-bold text-violet-700">novo v2</span> não existem no arquivo original — preencha-os para salvar em formato v2.
+              Campos marcados com <span className="font-bold text-violet-700 dark:text-violet-400">duimp</span> são exclusivos do layout DUIMP e não pertencem a este arquivo DI — preencha-os caso pretenda converter e exportar este documento como DUIMP.
             </span>
           )}
         </div>

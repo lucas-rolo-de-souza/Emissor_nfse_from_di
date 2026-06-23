@@ -56,10 +56,10 @@ export function FileInput({
 
   return (
     <div className="w-full">
-      <label className="block text-sm font-medium text-slate-700 mb-2">
+      <label className="block text-sm font-medium text-foreground mb-2 transition-colors duration-300">
         {label}
       </label>
-
+ 
       <AnimatePresence mode="wait">
         {!value ? (
           <motion.div
@@ -72,11 +72,11 @@ export function FileInput({
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
             className={cn(
-              "relative group cursor-pointer flex flex-col items-center justify-center w-full h-32 rounded-xl border-2 border-dashed transition-all duration-200",
+              "relative group cursor-pointer flex flex-col items-center justify-center w-full h-32 rounded-xl border-2 border-dashed transition-all duration-300",
               isDragOver
-                ? "border-indigo-500 bg-indigo-50/50"
-                : "border-slate-300 bg-slate-50 hover:bg-slate-100 hover:border-slate-400",
-              error && "!border-red-500 !bg-red-50"
+                ? "border-primary bg-primary/10"
+                : "border-border bg-card/40 dark:bg-input-background/30 hover:bg-slate-100/50 dark:hover:bg-input-background/60 hover:border-primary/50 dark:hover:border-primary/50",
+              error && "!border-destructive !bg-destructive/5 dark:!bg-destructive/10"
             )}
           >
             <input
@@ -90,23 +90,23 @@ export function FileInput({
             <div className="flex flex-col items-center justify-center pt-5 pb-6">
               <UploadCloud
                 className={cn(
-                  "w-8 h-8 mb-2 transition-colors",
+                  "w-8 h-8 mb-2 transition-colors duration-300",
                   isDragOver
-                    ? "text-indigo-500"
-                    : "text-slate-400 group-hover:text-slate-500",
-                  error && "!text-red-500"
+                    ? "text-primary"
+                    : "text-muted-foreground group-hover:text-primary/70",
+                  error && "!text-destructive"
                 )}
               />
               <p
                 className={cn(
-                  "mb-1 text-sm text-slate-500 font-medium",
-                  error && "!text-red-600"
+                  "mb-1 text-sm text-muted-foreground font-medium transition-colors duration-300",
+                  error && "!text-destructive"
                 )}
               >
                 <span
                   className={cn(
-                    "font-semibold text-indigo-600",
-                    error && "!text-red-600"
+                    "font-semibold text-primary",
+                    error && "!text-destructive"
                   )}
                 >
                   Click to upload
@@ -114,7 +114,7 @@ export function FileInput({
                 or drag and drop
               </p>
               {description && (
-                <p className="text-xs text-slate-400">{description}</p>
+                <p className="text-xs text-muted-foreground/80 transition-colors duration-300">{description}</p>
               )}
             </div>
           </motion.div>
@@ -124,25 +124,25 @@ export function FileInput({
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, y: 10 }}
             key="file-preview"
-            className="relative flex items-center p-4 rounded-xl border border-indigo-100 bg-indigo-50/50"
+            className="relative flex items-center p-4 rounded-xl border border-primary/20 bg-primary/5 dark:bg-primary/10 transition-colors duration-300"
           >
-            <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-indigo-100 flex items-center justify-center">
-              <FileText className="w-5 h-5 text-indigo-600" />
+            <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-primary/20 dark:bg-primary/25 flex items-center justify-center transition-colors duration-300">
+              <FileText className="w-5 h-5 text-primary" />
             </div>
             <div className="ml-4 flex-1 overflow-hidden">
               <div className="flex items-center gap-2">
-                <p className="text-sm font-medium text-slate-900 truncate">
+                <p className="text-sm font-medium text-foreground truncate transition-colors duration-300">
                   {value.name}
                 </p>
-                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
               </div>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground transition-colors duration-300">
                 {(value.size / 1024).toFixed(2)} KB
               </p>
             </div>
             <button
               onClick={() => onChange(null)}
-              className="ml-2 p-1.5 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+              className="ml-2 p-1.5 rounded-full text-muted-foreground hover:text-destructive dark:hover:text-destructive hover:bg-destructive/10 transition-all duration-300 cursor-pointer"
               aria-label="Remove file"
             >
               <X className="w-5 h-5" />
@@ -151,7 +151,7 @@ export function FileInput({
         )}
       </AnimatePresence>
       {error && (
-        <p className="mt-2 text-sm text-red-600 font-medium">{error}</p>
+        <p className="mt-2 text-sm text-destructive font-medium transition-colors duration-300">{error}</p>
       )}
     </div>
   );

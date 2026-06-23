@@ -39,12 +39,12 @@ export function UploadStep({
       <div className="mb-6 flex items-center gap-2">
         <button
           onClick={onBack}
-          className="p-2 -ml-2 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+          className="p-2 -ml-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-secondary transition-colors cursor-pointer"
           aria-label="Go back"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <h2 className="text-2xl font-bold text-slate-900">Upload DI XML</h2>
+        <h2 className="text-2xl font-bold text-foreground transition-colors duration-300">Upload DI XML</h2>
       </div>
 
       <div className="space-y-6">
@@ -57,7 +57,7 @@ export function UploadStep({
           description="Upload the XML file from the 'Espelho da DI' (Declaração de Importação)."
         />
 
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted-foreground transition-colors duration-300">
           After extracting the data, you'll be able to review and fill in
           additional information before generating the TXT file.
         </p>

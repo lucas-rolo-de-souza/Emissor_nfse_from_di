@@ -45,47 +45,47 @@ export function AuditSummaryBar({ lines, filename, detectedLayout, modifiedLines
   };
 
   const isModified = (name: string) => pickField(fields, name)?.isModified ?? false;
+  const isDuimp = detectedLayout === "v3_DUIMP";
+  const docLabel = isDuimp ? "DUIMP" : "DI";
+  const docValue = isDuimp ? f("numero_duimp") : f("numero_di");
+  const docModified = isDuimp ? isModified("numero_duimp") : isModified("numero_di");
 
   const identityTiles: TileProps[] = [
-    { label: "Nota", value: f("numero_nota"), colorClass: "bg-indigo-50 text-indigo-900", isModified: isModified("numero_nota") },
-    { label: "DI", value: f("numero_di"), colorClass: "bg-indigo-50 text-indigo-900", isModified: isModified("numero_di") },
-    { label: "CFOP", value: f("cfop"), colorClass: "bg-indigo-50 text-indigo-900", isModified: isModified("cfop") },
-    { label: "Emissão", value: f("data_emissao"), colorClass: "bg-purple-50 text-purple-900", isModified: isModified("data_emissao") },
-    { label: "Entrada", value: f("data_entrada"), colorClass: "bg-purple-50 text-purple-900", isModified: isModified("data_entrada") },
-    { label: "Itens", value: `${itemLines.length}`, colorClass: "bg-slate-100 text-slate-800" },
+    { label: "Nota", value: f("numero_nota"), colorClass: "bg-indigo-50 dark:bg-indigo-950/20 text-indigo-900 dark:text-indigo-300", isModified: isModified("numero_nota") },
+    { label: docLabel, value: docValue, colorClass: "bg-indigo-50 dark:bg-indigo-950/20 text-indigo-900 dark:text-indigo-300", isModified: docModified },
+    { label: "CFOP", value: f("cfop"), colorClass: "bg-indigo-50 dark:bg-indigo-950/20 text-indigo-900 dark:text-indigo-300", isModified: isModified("cfop") },
+    { label: "Emissão", value: f("data_emissao"), colorClass: "bg-purple-50 dark:bg-purple-950/20 text-purple-900 dark:text-purple-300", isModified: isModified("data_emissao") },
+    { label: "Entrada", value: f("data_entrada"), colorClass: "bg-purple-50 dark:bg-purple-950/20 text-purple-900 dark:text-purple-300", isModified: isModified("data_entrada") },
+    { label: "Itens", value: `${itemLines.length}`, colorClass: "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-350" },
   ];
 
   const financialTiles: TileProps[] = [
-    { label: "Total Mercadoria", value: f("valor_total_mercadoria"), colorClass: "bg-emerald-50 text-emerald-900", isModified: isModified("valor_total_mercadoria") },
-    { label: "Total Nota", value: f("valor_total_nota"), colorClass: "bg-emerald-50 text-emerald-900", isModified: isModified("valor_total_nota") },
-    { label: "Frete", value: f("valor_frete"), colorClass: "bg-emerald-50 text-emerald-900", isModified: isModified("valor_frete") },
-    { label: "Seguro", value: f("valor_seguro"), colorClass: "bg-emerald-50 text-emerald-900", isModified: isModified("valor_seguro") },
+    { label: "Total Mercadoria", value: f("valor_total_mercadoria"), colorClass: "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-300", isModified: isModified("valor_total_mercadoria") },
+    { label: "Total Nota", value: f("valor_total_nota"), colorClass: "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-300", isModified: isModified("valor_total_nota") },
+    { label: "Frete", value: f("valor_frete"), colorClass: "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-950/20 text-emerald-900 dark:text-emerald-300", isModified: isModified("valor_frete") },
+    { label: "Seguro", value: f("valor_seguro"), colorClass: "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-300", isModified: isModified("valor_seguro") },
   ];
 
   const exportador = f("nome_exportador");
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-4 space-y-3">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-700">Dados da Nota Fiscal</h3>
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">Dados da Nota Fiscal</h3>
         <div className="flex items-center gap-2">
           <span
             title={`Layout ${detectedLayout.toUpperCase()}: header ${LAYOUT_LENGTHS[detectedLayout].header} chars, item ${LAYOUT_LENGTHS[detectedLayout].item} chars`}
-            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide cursor-help ${
-              detectedLayout === "v2"
-                ? "bg-emerald-100 text-emerald-700"
-                : "bg-amber-100 text-amber-700"
-            }`}
+            className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide cursor-help bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300"
           >
-            Layout {detectedLayout.toUpperCase()}
+            {detectedLayout === "v3_DUIMP" ? "DUIMP (Layout 399/717)" : "DI (Layout 380/717)"}
           </span>
-          <span className="text-xs text-slate-400 font-mono">{filename}</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">{filename}</span>
         </div>
       </div>
 
       {exportador !== "—" && (
-        <p className="text-xs text-slate-500">
-          <span className="font-medium text-slate-600">Exportador: </span>{exportador}
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          <span className="font-medium text-slate-600 dark:text-slate-350">Exportador: </span>{exportador}
         </p>
       )}
 
@@ -95,7 +95,7 @@ export function AuditSummaryBar({ lines, filename, detectedLayout, modifiedLines
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-100">
+      <div className="flex flex-wrap gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
         {financialTiles.map((t) => (
           <SummaryTile key={t.label} {...t} />
         ))}

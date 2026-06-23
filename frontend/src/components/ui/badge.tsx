@@ -5,16 +5,16 @@ import { cn } from "@/lib/utils";
 const badgeVariants = cva(
   "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
   {
-    variants: {
-      variant: {
-        default: "border-transparent bg-blue-600 text-white",
-        secondary: "border-transparent bg-slate-100 text-slate-700",
-        destructive: "border-transparent bg-red-100 text-red-700",
-        outline: "text-slate-700",
-        success: "border-transparent bg-green-100 text-green-700",
-        warning: "border-transparent bg-amber-100 text-amber-700",
+      variants: {
+        variant: {
+          default: "border-transparent bg-primary text-primary-foreground",
+          secondary: "border-transparent bg-secondary text-secondary-foreground",
+          destructive: "border-transparent bg-destructive/10 dark:bg-destructive/20 text-destructive border border-destructive/20 dark:border-destructive/30",
+          outline: "border-border text-foreground",
+          success: "border-transparent bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/30",
+          warning: "border-transparent bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-900/30",
+        },
       },
-    },
     defaultVariants: { variant: "default" },
   },
 );

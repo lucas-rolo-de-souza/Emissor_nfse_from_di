@@ -26,6 +26,7 @@ const STEPS = [
 
 function emptyHeader(): HeaderData {
   return {
+    document_type: "DI",
     di_number: "",
     duimp_number: "",
     versao_registro: "",
@@ -51,6 +52,9 @@ function emptyHeader(): HeaderData {
     cod_transportador: "",
     cod_exportador: "",
     invoice_number: "",
+    mv_eic0010_source: "ITEMS",
+    aliq_icms_capa: "",
+    mv_eic0076_mode: "STANDARD_15",
   };
 }
 
@@ -88,6 +92,11 @@ function validateCapa(header: HeaderData): HeaderErrors {
   if (!header.data_emissao) errors.data_emissao = "Obrigatório";
   if (!header.data_entrada) errors.data_entrada = "Obrigatório";
   if (!header.cfop) errors.cfop = "Obrigatório";
+  if (header.document_type === "DUIMP") {
+    if (!header.duimp_number) errors.duimp_number = "Obrigatório";
+  } else {
+    if (!header.di_number) errors.di_number = "Obrigatório";
+  }
   return errors;
 }
 
@@ -257,8 +266,11 @@ function ReviewSummary({ header, adicoes }: { header: HeaderData; adicoes: Adica
           <SummaryRow label="Data de Emissão" value={header.data_emissao} />
           <SummaryRow label="Data de Entrada" value={header.data_entrada} />
           <SummaryRow label="CFOP" value={header.cfop} />
-          {header.di_number && <SummaryRow label="Número DI" value={header.di_number} />}
-          {header.duimp_number && <SummaryRow label="Número DUIMP" value={header.duimp_number} />}
+          {header.document_type === "DUIMP" ? (
+            <SummaryRow label="Número DUIMP" value={header.duimp_number} />
+          ) : (
+            <SummaryRow label="Número DI" value={header.di_number} />
+          )}
         </div>
       </div>
 

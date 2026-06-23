@@ -19,15 +19,12 @@ type FieldDef = {
 
 const SECTION_REQUIRED: FieldDef[] = [
   { key: "numero_nota", label: "Número da Nota", required: true, placeholder: "Ex: 000000001" },
-  { key: "data_emissao", label: "Data de Emissão", required: true, placeholder: "DDMMYYYY ou DD/MM/AAAA" },
-  { key: "data_entrada", label: "Data de Entrada", required: true, placeholder: "DDMMYYYY ou DD/MM/AAAA" },
+  { key: "data_emissao", label: "Data de Emissão", required: true, placeholder: "AAAAMMDD ou DD/MM/AAAA" },
+  { key: "data_entrada", label: "Data de Entrada", required: true, placeholder: "AAAAMMDD ou DD/MM/AAAA" },
   { key: "cfop", label: "CFOP", required: true, placeholder: "Ex: 3101" },
 ];
 
-const SECTION_NF: FieldDef[] = [
-  { key: "di_number", label: "Número DI", placeholder: "Número da DI (se houver)" },
-  { key: "duimp_number", label: "Número DUIMP", placeholder: "Número da DUIMP (se houver)" },
-];
+
 
 const SECTION_ENTITIES: FieldDef[] = [
   { key: "exporter_name", label: "Nome do Exportador", placeholder: "Ex: ACME CORP LTD" },
@@ -41,6 +38,9 @@ const SECTION_OPTIONAL: FieldDef[] = [
   { key: "numero_po", label: "Número do PO", placeholder: "Ex: PO-2025-001" },
   { key: "invoice_number", label: "Número da Invoice", placeholder: "Ex: INV-12345" },
   { key: "perc_reducao", label: "% Redução Base ICMS", placeholder: "Ex: 0.00" },
+  { key: "mv_eic0010_source", label: "Origem ICMS (MV_EIC0010)", placeholder: "HEADER ou ITEMS" },
+  { key: "aliq_icms_capa", label: "Alíq. ICMS CAPA", placeholder: "Ex: 12.00" },
+  { key: "mv_eic0076_mode", label: "Modo MV_EIC0076", placeholder: "STANDARD_15 ou FIELD_WIDTH" },
 ];
 
 function FieldRow({ fields, header, errors, onChange }: {
@@ -60,7 +60,7 @@ function FieldRow({ fields, header, errors, onChange }: {
             error={!!errors[key]}
             placeholder={placeholder}
           />
-          {errors[key] && <p className="text-xs text-red-500">{errors[key]}</p>}
+          {errors[key] && <p className="text-xs text-red-650 dark:text-red-400 font-medium">{errors[key]}</p>}
         </div>
       ))}
     </div>
@@ -68,31 +68,61 @@ function FieldRow({ fields, header, errors, onChange }: {
 }
 
 export function StepCapa({ header, onChange, errors }: StepCapaProps) {
+  const sectionNf = header.document_type === "DUIMP"
+    ? [{ key: "duimp_number" as keyof HeaderData, label: "Número DUIMP", required: true, placeholder: "Ex: 22/0000000-0" }]
+    : [{ key: "di_number" as keyof HeaderData, label: "Número DI", required: true, placeholder: "Ex: 22/000000-0" }];
+
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-sm font-semibold text-slate-700 mb-3">Identificação da Nota Fiscal</h3>
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-350 mb-3">Tipo do Documento (Layout de Exportação)</h3>
+        <div className="flex gap-3 mb-6">
+          <button
+            type="button"
+            onClick={() => onChange("document_type", "DI")}
+            className={`flex-1 py-2 px-4 rounded-md border text-sm font-semibold transition-all ${
+              header.document_type !== "DUIMP"
+                ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
+            }`}
+          >
+            DI (Layout 380/717)
+          </button>
+          <button
+            type="button"
+            onClick={() => onChange("document_type", "DUIMP")}
+            className={`flex-1 py-2 px-4 rounded-md border text-sm font-semibold transition-all ${
+              header.document_type === "DUIMP"
+                ? "bg-blue-600 text-white border-blue-600 shadow-sm"
+                : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700"
+            }`}
+          >
+            DUIMP (Layout 399/717)
+          </button>
+        </div>
+
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-350 mb-3">Identificação da Nota Fiscal</h3>
         <FieldRow fields={SECTION_REQUIRED} header={header} errors={errors} onChange={onChange} />
       </div>
 
       <Separator />
 
       <div>
-        <h3 className="text-sm font-semibold text-slate-700 mb-3">Processo de Importação</h3>
-        <FieldRow fields={SECTION_NF} header={header} errors={errors} onChange={onChange} />
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-350 mb-3">Processo de Importação</h3>
+        <FieldRow fields={sectionNf} header={header} errors={errors} onChange={onChange} />
       </div>
 
       <Separator />
 
       <div>
-        <h3 className="text-sm font-semibold text-slate-700 mb-3">Entidades</h3>
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-350 mb-3">Entidades</h3>
         <FieldRow fields={SECTION_ENTITIES} header={header} errors={errors} onChange={onChange} />
       </div>
 
       <Separator />
 
       <div>
-        <h3 className="text-sm font-semibold text-slate-700 mb-3">Informações Adicionais</h3>
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-350 mb-3">Informações Adicionais</h3>
         <FieldRow fields={SECTION_OPTIONAL} header={header} errors={errors} onChange={onChange} />
       </div>
     </div>
