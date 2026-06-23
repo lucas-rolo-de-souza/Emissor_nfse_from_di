@@ -8,11 +8,11 @@ export type FieldCategory =
   | "filler"
   | "text";
 
-export type LayoutVersion = "v1" | "v2";
+export type LayoutVersion = "v3_DI" | "v3_DUIMP";
 
 export const LAYOUT_LENGTHS: Record<LayoutVersion, { header: number; item: number }> = {
-  v1: { header: 380, item: 688 },
-  v2: { header: 399, item: 716 },
+  v3_DI: { header: 380, item: 717 },
+  v3_DUIMP: { header: 399, item: 717 },
 };
 
 export interface FieldDef {
@@ -28,6 +28,7 @@ export interface FieldDef {
   readOnly?: boolean;
   desc?: string;
   isNewInV2?: boolean;
+  isDUIMPOnly?: boolean;
 }
 
 export interface ExtractedField {
@@ -127,10 +128,10 @@ export const HEADER_SCHEMA: FieldDef[] = [
   { name: "numero_processo", start: 56, len: 17, type: "A", category: "id", friendlyLabel: "Num. Processo/Desemb.", desc: "Processo de desembaraço (obrigatório)" },
   { name: "qtd_itens", start: 73, len: 2, type: "N", decimals: 0, category: "quantity", friendlyLabel: "Qtd. Itens", desc: "Máx. 99 (obrigatório)" },
   { name: "data_referencia", start: 75, len: 6, type: "N", decimals: 0, category: "date", friendlyLabel: "Data Referência", dateFormat: "MMAAAA" },
-  { name: "data_emissao", start: 81, len: 8, type: "N", decimals: 0, category: "date", friendlyLabel: "Data Emissão", dateFormat: "DDMMAAAA", desc: "DDMMAAAA (obrigatório)" },
-  { name: "data_entrada", start: 89, len: 8, type: "N", decimals: 0, category: "date", friendlyLabel: "Data Entrada", dateFormat: "DDMMAAAA", desc: "DDMMAAAA (obrigatório)" },
+  { name: "data_emissao", start: 81, len: 8, type: "N", decimals: 0, category: "date", friendlyLabel: "Data Emissão", dateFormat: "AAAAMMDD", desc: "AAAAMMDD (obrigatório)" },
+  { name: "data_entrada", start: 89, len: 8, type: "N", decimals: 0, category: "date", friendlyLabel: "Data Entrada", dateFormat: "AAAAMMDD", desc: "AAAAMMDD (obrigatório)" },
   { name: "filler_2", start: 97, len: 6, category: "filler", friendlyLabel: "Filler", readOnly: true },
-  { name: "data_di", start: 103, len: 8, type: "N", decimals: 0, category: "date", friendlyLabel: "Data DI", dateFormat: "DDMMAAAA" },
+  { name: "data_di", start: 103, len: 8, type: "N", decimals: 0, category: "date", friendlyLabel: "Data DI", dateFormat: "AAAAMMDD", desc: "AAAAMMDD (obrigatório)" },
   { name: "filler_3", start: 111, len: 2, category: "filler", friendlyLabel: "Filler", readOnly: true },
   { name: "entrada_saida", start: 113, len: 1, type: "A", category: "meta", friendlyLabel: "Entrada/Saída", readOnly: true, desc: "Fixo 'E'" },
   { name: "especie", start: 114, len: 3, type: "A", category: "meta", friendlyLabel: "Espécie Nota", desc: "NFC, NFE, NFM, NFF, NFU ou NFT" },
@@ -159,8 +160,8 @@ export const HEADER_SCHEMA: FieldDef[] = [
   { name: "nome_exportador", start: 298, len: 60, type: "A", category: "text", friendlyLabel: "Nome Exportador" },
   { name: "numero_po", start: 358, len: 17, type: "A", category: "id", friendlyLabel: "Número PO" },
   { name: "perc_reducao", start: 375, len: 6, type: "N", decimals: 2, category: "tax", friendlyLabel: "Red. Base ICMS", unit: "%" },
-  { name: "numero_duimp", start: 381, len: 15, type: "A", category: "id", friendlyLabel: "Número DUIMP", isNewInV2: true },
-  { name: "versao_registro", start: 396, len: 4, type: "A", category: "meta", friendlyLabel: "Versão Registro", isNewInV2: true },
+  { name: "numero_duimp", start: 381, len: 15, type: "A", category: "id", friendlyLabel: "Número DUIMP", isDUIMPOnly: true },
+  { name: "versao_registro", start: 396, len: 4, type: "A", category: "meta", friendlyLabel: "Versão Registro", isDUIMPOnly: true },
 ];
 
 export const ITEM_SCHEMA: FieldDef[] = [
@@ -174,60 +175,65 @@ export const ITEM_SCHEMA: FieldDef[] = [
   { name: "trib_icms", start: 51, len: 1, type: "N", decimals: 0, category: "tax", friendlyLabel: "Trib. ICMS" },
   { name: "trib_ipi", start: 52, len: 1, type: "N", decimals: 0, category: "tax", friendlyLabel: "Trib. IPI" },
   { name: "num_item", start: 53, len: 2, type: "N", decimals: 0, category: "meta", friendlyLabel: "Num. Item" },
-  { name: "quantidade", start: 55, len: 11, type: "N", decimals: 4, category: "quantity", friendlyLabel: "Quantidade", desc: "Obrigatório" },
-  { name: "unidade", start: 66, len: 3, type: "A", category: "meta", friendlyLabel: "Unidade", desc: "Usa unidade do Easy" },
-  { name: "valor_ipi", start: 69, len: 15, type: "N", decimals: 2, category: "tax", friendlyLabel: "Valor IPI" },
-  { name: "valor_mercadoria", start: 84, len: 15, type: "N", decimals: 2, category: "value", friendlyLabel: "Valor Mercadoria", desc: "CIF + II" },
-  { name: "flag_entrada", start: 99, len: 1, type: "A", category: "meta", friendlyLabel: "Flag Entrada", readOnly: true, desc: "Fixo 'I'" },
-  { name: "qtd_recebimento", start: 100, len: 11, type: "N", decimals: 4, category: "quantity", friendlyLabel: "Qtd. Recebimento" },
-  { name: "descricao", start: 111, len: 150, type: "A", category: "text", friendlyLabel: "Descrição" },
-  { name: "valor_fob", start: 261, len: 15, type: "N", decimals: 2, category: "value", friendlyLabel: "Valor FOB (R$)", desc: "Obrigatório" },
-  { name: "valor_frete", start: 276, len: 15, type: "N", decimals: 2, category: "value", friendlyLabel: "Valor Frete" },
-  { name: "valor_seguro", start: 291, len: 15, type: "N", decimals: 2, category: "value", friendlyLabel: "Valor Seguro" },
-  { name: "valor_ii", start: 306, len: 15, type: "N", decimals: 2, category: "tax", friendlyLabel: "Valor II" },
-  { name: "aliq_ipi", start: 321, len: 5, type: "N", decimals: 2, category: "tax", friendlyLabel: "Alíq. IPI", unit: "%" },
-  { name: "valor_despesas", start: 326, len: 15, type: "N", decimals: 2, category: "value", friendlyLabel: "Despesas" },
-  { name: "num_processo_easy", start: 341, len: 17, type: "A", category: "id", friendlyLabel: "Num. Processo Easy", desc: "Obrigatório" },
-  { name: "ex_ncm", start: 358, len: 3, type: "A", category: "id", friendlyLabel: "EX NCM" },
-  { name: "num_invoice", start: 361, len: 15, type: "A", category: "id", friendlyLabel: "Num. Invoice" },
-  { name: "icms_recolher", start: 376, len: 15, type: "N", decimals: 2, category: "tax", friendlyLabel: "ICMS a Recolher" },
-  { name: "peso_liquido", start: 391, len: 11, type: "N", decimals: 4, category: "quantity", friendlyLabel: "Peso Líquido", unit: "kg", desc: "Obrigatório" },
-  { name: "item_pedido", start: 402, len: 4, type: "C", category: "id", friendlyLabel: "Item Pedido", desc: "Obrigatório no Easy" },
-  { name: "aliq_ii", start: 406, len: 5, type: "N", decimals: 2, category: "tax", friendlyLabel: "Alíq. II", unit: "%" },
-  { name: "num_pedido", start: 411, len: 17, type: "C", category: "id", friendlyLabel: "Num. Pedido", desc: "Obrigatório no Easy" },
-  { name: "num_pli", start: 428, len: 10, type: "C", category: "id", friendlyLabel: "PLI / LI" },
-  { name: "serie", start: 438, len: 3, type: "C", category: "meta", friendlyLabel: "Série", desc: "Deve coincidir com header" },
-  { name: "base_icms", start: 441, len: 15, type: "N", decimals: 2, category: "tax", friendlyLabel: "Base ICMS" },
-  { name: "valor_fob_origem", start: 456, len: 15, type: "N", decimals: 7, category: "value", friendlyLabel: "FOB Moeda Origem" },
-  { name: "aliq_pis", start: 471, len: 6, type: "N", decimals: 2, category: "tax", friendlyLabel: "Alíq. PIS", unit: "%" },
-  { name: "vlr_qtde_pis", start: 477, len: 9, type: "N", decimals: 2, category: "tax", friendlyLabel: "Vlr. Qtde PIS" },
-  { name: "base_pis", start: 486, len: 15, type: "N", decimals: 2, category: "tax", friendlyLabel: "Base PIS" },
-  { name: "valor_pis", start: 501, len: 15, type: "N", decimals: 2, category: "tax", friendlyLabel: "Valor PIS" },
-  { name: "aliq_cofins", start: 516, len: 6, type: "N", decimals: 2, category: "tax", friendlyLabel: "Alíq. COFINS", unit: "%" },
-  { name: "vlr_qtde_cofins", start: 522, len: 9, type: "N", decimals: 2, category: "tax", friendlyLabel: "Vlr. Qtde COFINS" },
-  { name: "base_cofins", start: 531, len: 15, type: "N", decimals: 2, category: "tax", friendlyLabel: "Base COFINS" },
-  { name: "valor_cofins", start: 546, len: 15, type: "N", decimals: 2, category: "tax", friendlyLabel: "Valor COFINS" },
-  { name: "num_adicao", start: 561, len: 3, type: "C", category: "id", friendlyLabel: "Num. Adição" },
-  { name: "seq_item", start: 564, len: 3, type: "C", category: "id", friendlyLabel: "Seq. Item" },
-  { name: "valor_desconto", start: 567, len: 15, type: "N", decimals: 2, category: "value", friendlyLabel: "Valor Desconto" },
-  { name: "valor_iof", start: 582, len: 15, type: "N", decimals: 2, category: "tax", friendlyLabel: "Valor IOF" },
-  { name: "despesas_aduaneiras", start: 597, len: 15, type: "N", decimals: 2, category: "value", friendlyLabel: "Despesas Aduaneiras" },
-  { name: "aliq_esp_ipi", start: 612, len: 15, type: "N", decimals: 4, category: "tax", friendlyLabel: "Alíq. Esp. IPI" },
-  { name: "qtde_ipi", start: 627, len: 11, type: "N", decimals: 4, category: "quantity", friendlyLabel: "Qtde IPI" },
-  { name: "qtde_pis", start: 638, len: 11, type: "N", decimals: 4, category: "quantity", friendlyLabel: "Qtde PIS" },
-  { name: "qtde_cofins", start: 649, len: 11, type: "N", decimals: 4, category: "quantity", friendlyLabel: "Qtde COFINS" },
-  { name: "lote", start: 660, len: 10, type: "C", category: "id", friendlyLabel: "Lote" },
-  { name: "validade", start: 670, len: 8, type: "D", category: "date", friendlyLabel: "Validade", dateFormat: "AAAAMMDD" },
-  { name: "aliq_icms", start: 678, len: 5, type: "N", decimals: 2, category: "tax", friendlyLabel: "Alíq. ICMS", unit: "%" },
-  { name: "aliq_maj_cofins", start: 683, len: 6, type: "N", decimals: 2, category: "tax", friendlyLabel: "Alíq. Maj. COFINS", unit: "%" },
-  { name: "perc_dif_icms", start: 689, len: 8, type: "N", decimals: 4, category: "tax", friendlyLabel: "% Dif. ICMS", unit: "%", isNewInV2: true },
-  { name: "codigo_li", start: 697, len: 10, type: "C", category: "id", friendlyLabel: "Código LI", isNewInV2: true },
-  { name: "codigo_li_substitutiva", start: 707, len: 10, type: "C", category: "id", friendlyLabel: "LI Substitutiva", isNewInV2: true },
+  { name: "quantidade", start: 55, len: 12, type: "N", decimals: 4, category: "quantity", friendlyLabel: "Quantidade", desc: "Obrigatório" },
+  { name: "unidade", start: 67, len: 3, type: "A", category: "meta", friendlyLabel: "Unidade", desc: "Usa unidade do Easy" },
+  { name: "valor_ipi", start: 70, len: 15, type: "N", decimals: 2, category: "tax", friendlyLabel: "Valor IPI" },
+  { name: "valor_mercadoria", start: 85, len: 15, type: "N", decimals: 2, category: "value", friendlyLabel: "Valor Mercadoria", desc: "CIF + II" },
+  { name: "flag_entrada", start: 100, len: 1, type: "A", category: "meta", friendlyLabel: "Flag Entrada", readOnly: true, desc: "Fixo 'I'" },
+  { name: "qtd_recebimento", start: 101, len: 11, type: "N", decimals: 4, category: "quantity", friendlyLabel: "Qtd. Recebimento" },
+  { name: "descricao", start: 112, len: 150, type: "A", category: "text", friendlyLabel: "Descrição" },
+  { name: "valor_fob", start: 262, len: 15, type: "N", decimals: 2, category: "value", friendlyLabel: "Valor FOB (R$)", desc: "Obrigatório" },
+  { name: "valor_frete", start: 277, len: 15, type: "N", decimals: 2, category: "value", friendlyLabel: "Valor Frete" },
+  { name: "valor_seguro", start: 292, len: 15, type: "N", decimals: 2, category: "value", friendlyLabel: "Valor Seguro" },
+  { name: "valor_ii", start: 307, len: 15, type: "N", decimals: 2, category: "tax", friendlyLabel: "Valor II" },
+  { name: "aliq_ipi", start: 322, len: 5, type: "N", decimals: 2, category: "tax", friendlyLabel: "Alíq. IPI", unit: "%" },
+  { name: "valor_despesas", start: 327, len: 15, type: "N", decimals: 2, category: "value", friendlyLabel: "Despesas" },
+  { name: "num_processo_easy", start: 342, len: 17, type: "A", category: "id", friendlyLabel: "Num. Processo Easy", desc: "Obrigatório" },
+  { name: "ex_ncm", start: 359, len: 3, type: "A", category: "id", friendlyLabel: "EX NCM" },
+  { name: "num_invoice", start: 362, len: 15, type: "A", category: "id", friendlyLabel: "Num. Invoice" },
+  { name: "icms_recolher", start: 377, len: 15, type: "N", decimals: 2, category: "tax", friendlyLabel: "ICMS a Recolher" },
+  { name: "peso_liquido", start: 392, len: 11, type: "N", decimals: 4, category: "quantity", friendlyLabel: "Peso Líquido", unit: "kg", desc: "Obrigatório" },
+  { name: "item_pedido", start: 403, len: 4, type: "C", category: "id", friendlyLabel: "Item Pedido", desc: "Obrigatório no Easy" },
+  { name: "aliq_ii", start: 407, len: 5, type: "N", decimals: 2, category: "tax", friendlyLabel: "Alíq. II", unit: "%" },
+  { name: "num_pedido", start: 412, len: 17, type: "C", category: "id", friendlyLabel: "Num. Pedido", desc: "Obrigatório no Easy" },
+  { name: "num_pli", start: 429, len: 10, type: "C", category: "id", friendlyLabel: "PLI / LI" },
+  { name: "serie", start: 439, len: 3, type: "C", category: "meta", friendlyLabel: "Série", desc: "Deve coincidir com header" },
+  { name: "base_icms", start: 442, len: 15, type: "N", decimals: 2, category: "tax", friendlyLabel: "Base ICMS" },
+  { name: "valor_fob_origem", start: 457, len: 15, type: "N", decimals: 7, category: "value", friendlyLabel: "FOB Moeda Origem" },
+  { name: "aliq_pis", start: 472, len: 6, type: "N", decimals: 2, category: "tax", friendlyLabel: "Alíq. PIS", unit: "%" },
+  { name: "vlr_qtde_pis", start: 478, len: 9, type: "N", decimals: 2, category: "tax", friendlyLabel: "Vlr. Qtde PIS" },
+  { name: "base_pis", start: 487, len: 15, type: "N", decimals: 2, category: "tax", friendlyLabel: "Base PIS" },
+  { name: "valor_pis", start: 502, len: 15, type: "N", decimals: 2, category: "tax", friendlyLabel: "Valor PIS" },
+  { name: "aliq_cofins", start: 517, len: 6, type: "N", decimals: 2, category: "tax", friendlyLabel: "Alíq. COFINS", unit: "%" },
+  { name: "vlr_qtde_cofins", start: 523, len: 9, type: "N", decimals: 2, category: "tax", friendlyLabel: "Vlr. Qtde COFINS" },
+  { name: "base_cofins", start: 532, len: 15, type: "N", decimals: 2, category: "tax", friendlyLabel: "Base COFINS" },
+  { name: "valor_cofins", start: 547, len: 15, type: "N", decimals: 2, category: "tax", friendlyLabel: "Valor COFINS" },
+  { name: "num_adicao", start: 562, len: 3, type: "C", category: "id", friendlyLabel: "Num. Adição" },
+  { name: "seq_item", start: 565, len: 3, type: "C", category: "id", friendlyLabel: "Seq. Item" },
+  { name: "valor_desconto", start: 568, len: 15, type: "N", decimals: 2, category: "value", friendlyLabel: "Valor Desconto" },
+  { name: "valor_iof", start: 583, len: 15, type: "N", decimals: 2, category: "tax", friendlyLabel: "Valor IOF" },
+  { name: "despesas_aduaneiras", start: 598, len: 15, type: "N", decimals: 2, category: "value", friendlyLabel: "Despesas Aduaneiras" },
+  { name: "aliq_esp_ipi", start: 613, len: 15, type: "N", decimals: 4, category: "tax", friendlyLabel: "Alíq. Esp. IPI" },
+  { name: "qtde_ipi", start: 628, len: 11, type: "N", decimals: 4, category: "quantity", friendlyLabel: "Qtde IPI" },
+  { name: "qtde_pis", start: 639, len: 11, type: "N", decimals: 4, category: "quantity", friendlyLabel: "Qtde PIS" },
+  { name: "qtde_cofins", start: 650, len: 11, type: "N", decimals: 4, category: "quantity", friendlyLabel: "Qtde COFINS" },
+  { name: "lote", start: 661, len: 10, type: "C", category: "id", friendlyLabel: "Lote" },
+  { name: "validade", start: 671, len: 8, type: "D", category: "date", friendlyLabel: "Validade", dateFormat: "AAAAMMDD" },
+  { name: "aliq_icms", start: 679, len: 5, type: "N", decimals: 2, category: "tax", friendlyLabel: "Alíq. ICMS", unit: "%" },
+  { name: "aliq_maj_cofins", start: 684, len: 6, type: "N", decimals: 2, category: "tax", friendlyLabel: "Alíq. Maj. COFINS", unit: "%" },
+  { name: "perc_dif_icms", start: 690, len: 8, type: "N", decimals: 4, category: "tax", friendlyLabel: "% Dif. ICMS", unit: "%", isNewInV2: true },
+  { name: "codigo_li", start: 698, len: 10, type: "C", category: "id", friendlyLabel: "Código LI", isNewInV2: true },
+  { name: "codigo_li_substitutiva", start: 708, len: 10, type: "C", category: "id", friendlyLabel: "LI Substitutiva", isNewInV2: true },
 ];
 
-export function getSchemaForLine(line: string): FieldDef[] {
+export function getSchemaForLine(line: string, layout?: LayoutVersion): FieldDef[] {
   const type = line.charAt(0);
-  if (type === "1") return HEADER_SCHEMA;
+  if (type === "1") {
+    if (layout === "v3_DI") {
+      return HEADER_SCHEMA.filter((f) => !f.isDUIMPOnly);
+    }
+    return HEADER_SCHEMA;
+  }
   if (type === "2") return ITEM_SCHEMA;
   return [];
 }
@@ -255,8 +261,8 @@ export function extractFields(
 
 export function detectLayoutVersion(lines: string[]): LayoutVersion {
   const headerLine = lines.find((l) => l.charAt(0) === "1");
-  if (!headerLine) return "v2";
-  return headerLine.length >= LAYOUT_LENGTHS.v2.header ? "v2" : "v1";
+  if (!headerLine) return "v3_DUIMP";
+  return headerLine.length >= LAYOUT_LENGTHS.v3_DUIMP.header ? "v3_DUIMP" : "v3_DI";
 }
 
 function getDefaultRawValue(def: FieldDef): string {
@@ -270,24 +276,77 @@ function getDefaultRawValue(def: FieldDef): string {
   return " ".repeat(def.len);
 }
 
+function normalizeRawValue(def: FieldDef, val: string): string {
+  if (def.category === "filler") {
+    return val.padEnd(def.len, " ").slice(0, def.len);
+  }
+
+  if (def.type === "N" && def.decimals !== undefined && def.decimals > 0) {
+    const intWidth = def.len - def.decimals - 1;
+    let intPart: string;
+    let decPart: string;
+
+    const cleaned = val.replace(/[^0-9.]/g, "");
+
+    if (!cleaned && val.trim().length > 0) {
+      return val.padEnd(def.len, " ").slice(0, def.len);
+    }
+
+    if (cleaned.includes(".")) {
+      const dotIdx = cleaned.indexOf(".");
+      intPart = cleaned.slice(0, dotIdx);
+      decPart = cleaned.slice(dotIdx + 1, dotIdx + 1 + def.decimals);
+    } else {
+      if (cleaned.length <= def.decimals) {
+        intPart = "0";
+        decPart = cleaned.padStart(def.decimals, "0");
+      } else {
+        intPart = cleaned.slice(0, cleaned.length - def.decimals);
+        decPart = cleaned.slice(-def.decimals);
+      }
+    }
+
+    intPart = intPart.padStart(intWidth, "0").slice(-intWidth);
+    decPart = decPart.padEnd(def.decimals, "0").slice(0, def.decimals);
+
+    return `${intPart}.${decPart}`;
+  }
+
+  if (def.type === "N") {
+    const cleaned = val.replace(/[^0-9]/g, "");
+
+    if (!cleaned && val.trim().length > 0) {
+      return val.padEnd(def.len, " ").slice(0, def.len);
+    }
+
+    return cleaned.padStart(def.len, "0").slice(-def.len);
+  }
+
+  return val.padEnd(def.len, " ").slice(0, def.len);
+}
+
 export function padLineToLayout(line: string, target: LayoutVersion): string {
   const type = line.charAt(0);
-  const schema = type === "1" ? HEADER_SCHEMA : type === "2" ? ITEM_SCHEMA : null;
+  const schema = type === "1"
+    ? HEADER_SCHEMA.filter((f) => target === "v3_DUIMP" || !f.isDUIMPOnly)
+    : type === "2" ? ITEM_SCHEMA : null;
   if (!schema) return line;
 
   const targetLen = type === "1"
     ? LAYOUT_LENGTHS[target].header
     : LAYOUT_LENGTHS[target].item;
 
-  if (line.length >= targetLen) return line.slice(0, targetLen);
-
-  let result = line;
+  let result = "";
   for (const def of schema) {
     const startIdx = def.start - 1;
-    if (startIdx >= result.length && startIdx < targetLen) {
-      result = result.padEnd(startIdx, " ") + getDefaultRawValue(def);
+    if (startIdx < line.length) {
+      const rawValue = line.substring(startIdx, startIdx + def.len);
+      result += normalizeRawValue(def, rawValue);
+    } else {
+      result += getDefaultRawValue(def);
     }
   }
+
   return result.slice(0, targetLen).padEnd(targetLen, " ");
 }
 
@@ -296,5 +355,5 @@ export function convertLinesToLayout(content: string, target: LayoutVersion): st
     .split(/\r\n|\n|\r/)
     .filter((l) => l.trim().length > 0)
     .map((l) => padLineToLayout(l, target))
-    .join("\r");
+    .join("\r\n") + "\r\n";
 }
