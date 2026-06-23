@@ -450,3 +450,25 @@ def test_asterisks_stripped_from_li_fields():
     assert parsed_item["codigo_li"] == "123456"
     assert parsed_item["codigo_li_substitutiva"] == "789012"
 
+
+def test_special_characters_ascii_cleaning():
+    header = _make_header(exporter_name="MÖBEL & CO. LTDA - FILIAL BRASIL")
+    item = _make_item(
+        total_value=1200.0,
+        description="Parafuso para Terminais de Fixação com Cabeça de Latão - nº 5"
+    )
+    _, lines = _build_and_split(header, [item])
+    
+    # 1. Header exporter name (Field 43: indices 297:357)
+    # "MÖBEL & CO. LTDA - FILIAL BRASIL" should normalize 'Ö' to 'O' and keep other ASCII.
+    # Note that 'º' is replaced with ' '.
+    exporter_field = lines[0][297:357]
+    assert "MOBEL & CO. LTDA - FILIAL BRASIL" in exporter_field
+    
+    # 2. Item description (Field 17: indices 111:261)
+    # "Parafuso para Terminais de Fixação com Cabeça de Latão - nº 5"
+    # 'ç' -> 'c', 'ã' -> 'a', 'ê' -> 'e', 'ã' -> 'a', 'º' -> ' '
+    desc_field = lines[1][111:261]
+    assert "Parafuso para Terminais de Fixacao com Cabeca de Latao - n  5" in desc_field
+
+

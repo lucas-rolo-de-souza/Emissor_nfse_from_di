@@ -22,6 +22,29 @@ export function EditableCell({ fieldDef, rawValue, onCommit }: EditableCellProps
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value;
+
+    if (fieldDef.type === "N") {
+      if (fieldDef.decimals !== undefined && fieldDef.decimals > 0) {
+        // Only allow digits and a single dot
+        val = val.replace(/[^0-9.]/g, "");
+        const parts = val.split(".");
+        if (parts.length > 2) {
+          val = parts[0] + "." + parts.slice(1).join("");
+        }
+      } else {
+        // Only allow digits
+        val = val.replace(/[^0-9]/g, "");
+      }
+    } else if (fieldDef.category === "date" || fieldDef.type === "D") {
+      // Date fields only receive digits
+      val = val.replace(/[^0-9]/g, "");
+    }
+
+    setLocalVal(val);
+  };
+
   const isReadOnly = fieldDef.readOnly === true;
 
   return (
@@ -36,7 +59,7 @@ export function EditableCell({ fieldDef, rawValue, onCommit }: EditableCellProps
         }`}
       maxLength={fieldDef.len}
       value={localVal}
-      onChange={(e) => !isReadOnly && setLocalVal(e.target.value)}
+      onChange={handleChange}
       onBlur={handleCommit}
       onKeyDown={(e) => {
         if (e.key === "Enter") e.currentTarget.blur();
@@ -48,3 +71,4 @@ export function EditableCell({ fieldDef, rawValue, onCommit }: EditableCellProps
     />
   );
 }
+

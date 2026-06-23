@@ -1,5 +1,28 @@
 from typing import Dict, List, Any
 from datetime import datetime
+import unicodedata
+
+
+def clean_ascii(value: Any) -> str:
+    """Normalize accented characters to base ASCII and strip non-printable ASCII."""
+    if value is None:
+        return ""
+    s = str(value)
+    # Normalize unicode to NFD (decomposes accented chars into letter + accent)
+    nfd = unicodedata.normalize('NFD', s)
+    cleaned = []
+    for c in nfd:
+        # Skip combining characters (accent marks)
+        if unicodedata.combining(c):
+            continue
+        o = ord(c)
+        # Keep printable ASCII (32-126)
+        if 32 <= o <= 126:
+            cleaned.append(c)
+        else:
+            # Replace other special non-ASCII characters with space
+            cleaned.append(' ')
+    return "".join(cleaned)
 
 
 class FixedWidth:
@@ -23,9 +46,10 @@ class FixedWidth:
 
     @staticmethod
     def format_alpha(value: Any, width: int) -> str:
-        """Left-aligned alphanumeric with trailing spaces."""
-        s = str(value if value is not None else "")
+        """Left-aligned alphanumeric with trailing spaces, cleaned of special characters."""
+        s = clean_ascii(value)
         return s[:width].ljust(width)
+
 
     @staticmethod
     def format_int(value: Any, width: int) -> str:

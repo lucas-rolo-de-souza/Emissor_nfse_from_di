@@ -1,4 +1,5 @@
 import type { FieldDef } from "./fieldSchema";
+import { cleanAscii } from "./fieldSchema";
 
 function isZeroOrEmpty(raw: string): boolean {
   const trimmed = raw.trim();
@@ -117,6 +118,7 @@ export function formatRawFromUserInput(def: FieldDef, userInput: string): string
     return cleaned.padStart(def.len, "0").slice(-def.len);
   }
 
-  // Alpha / C / D fields
-  return userInput.padEnd(def.len, " ").slice(0, def.len);
+  // Alpha / C / D fields are cleaned to printable ASCII and padded
+  return cleanAscii(userInput).padEnd(def.len, " ").slice(0, def.len);
 }
+

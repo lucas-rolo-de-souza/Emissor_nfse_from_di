@@ -276,6 +276,30 @@ function getDefaultRawValue(def: FieldDef): string {
   return " ".repeat(def.len);
 }
 
+export function cleanAscii(value: any): string {
+  if (value === null || value === undefined) return "";
+  const s = String(value);
+  // Decompose accented characters into base letter + combining accent mark
+  const normalized = s.normalize("NFD");
+  const cleaned: string[] = [];
+  for (let i = 0; i < normalized.length; i++) {
+    const c = normalized[i];
+    const code = c.charCodeAt(0);
+    // Skip combining diacritical marks (accents)
+    if (code >= 0x0300 && code <= 0x036F) {
+      continue;
+    }
+    // Keep standard printable ASCII (32-126)
+    if (code >= 32 && code <= 126) {
+      cleaned.push(c);
+    } else {
+      // Replace non-ASCII/special characters with a space
+      cleaned.push(" ");
+    }
+  }
+  return cleaned.join("");
+}
+
 function normalizeRawValue(def: FieldDef, val: string): string {
   if (def.category === "filler") {
     return val.padEnd(def.len, " ").slice(0, def.len);
@@ -322,8 +346,10 @@ function normalizeRawValue(def: FieldDef, val: string): string {
     return cleaned.padStart(def.len, "0").slice(-def.len);
   }
 
-  return val.padEnd(def.len, " ").slice(0, def.len);
+  // Alpha / C / D fields get cleaned to printable ASCII and padded
+  return cleanAscii(val).padEnd(def.len, " ").slice(0, def.len);
 }
+
 
 export function padLineToLayout(line: string, target: LayoutVersion): string {
   const type = line.charAt(0);
