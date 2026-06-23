@@ -1,0 +1,44 @@
+# Ignore version control
+.git
+.gitignore
+
+# Ignore python caches and environments
+.pytest_cache
+**/.pytest_cache
+.venv
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+
+# Ignore IDE and tool configuration files
+.claude
+.github
+.idea
+.vscode
+
+# Ignore frontend (it has its own context ./frontend)
+frontend/
+
+# Ignore root-level documents, test data, and scripts
+docs/
+format_guidelines/
+tests/
+ARCHITECTURE.md
+CLAUDE.md
+PROJECT_OVERVIEW.md
+pytest.ini
+run.bat
+run_dev_testing_user_launcher.bat
+summarize_errors.py
+test_output.txt
+test_output_2.txt
+test_template - Copia.xlsx
+test_template.xlsx
+docker-compose.yml
