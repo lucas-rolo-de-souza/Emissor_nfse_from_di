@@ -4,6 +4,7 @@ from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
 from typing import List, Dict, Any, Optional
 import io
+import json
 
 # Import Services
 from backend.parsers.xml_parser import parse_di_xml
@@ -32,6 +33,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition", "X-Warnings"],
 )
 
 # --- Pydantic Models for /generate ---
@@ -244,6 +246,22 @@ def _flatten_item(adicao: dict, item: dict, header_data: dict) -> dict:
     }
 
 
+def collect_generation_warnings(header_data: dict, adicoes_data: list, items_flat: list) -> List[str]:
+    """Non-blocking checks that flag content possibly left out of the generated TXT."""
+    warnings = []
+    declared = int(header_data.get('total_additions') or 0)
+    if declared and declared != len(adicoes_data):
+        warnings.append(
+            f"A DI declara {declared} adições, mas apenas {len(adicoes_data)} foram enviadas para geração."
+        )
+    for adicao in adicoes_data:
+        if not adicao.get('items'):
+            warnings.append(f"Adição {adicao.get('number')}: sem itens, nenhuma linha será gerada.")
+    if not items_flat:
+        warnings.append("Nenhum item será gerado no arquivo.")
+    return warnings
+
+
 @app.get("/")
 def read_root():
     return {"message": "API Online", "version": "2.0.0"}
@@ -422,11 +440,17 @@ async def generate_txt(request: GenerateRequest):
         buffer = io.BytesIO(txt_content.encode('utf-8'))
         di_number = header_data.get('di_number', 'output')
         filename = f"NF_{di_number}.txt"
-        
+
+        response_headers = {"Content-Disposition": f"attachment; filename={filename}"}
+        warnings = collect_generation_warnings(header_data, adicoes_data, items_flat)
+        if warnings:
+            # ASCII-safe JSON so it survives the HTTP header encoding
+            response_headers["X-Warnings"] = json.dumps(warnings, ensure_ascii=True)
+
         return StreamingResponse(
             buffer,
             media_type="text/plain",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
+            headers=response_headers
         )
         
     except HTTPException:
@@ -447,11 +471,22 @@ async def parse_txt(txt_file: UploadFile = File(...)):
     try:
         txt_content = await txt_file.read()
         header, items = parse_txt_content(txt_content)
-        
+
+        warnings = []
+        try:
+            declared = int(header.get('qtd_itens') or 0)
+        except ValueError:
+            declared = None
+        if declared is not None and declared != len(items):
+            warnings.append(
+                f"O cabeçalho declara {declared} itens, mas o arquivo contém {len(items)} linhas de item."
+            )
+
         return JSONResponse(content={
             "header": header,
             "items": items,
-            "filename": txt_file.filename
+            "filename": txt_file.filename,
+            "warnings": warnings,
         })
         
     except ValueError as e:

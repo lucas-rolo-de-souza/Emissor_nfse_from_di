@@ -31,6 +31,16 @@ export function TxtViewerStep({ onBack }: TxtViewerStepProps) {
     [modifiedContent],
   );
 
+  // Header "Quantidade de Itens" (pos. 73-74) must equal the number of item lines
+  const itemCountWarning = useMemo(() => {
+    const header = lines.find((l) => l.startsWith("1"));
+    if (!header) return null;
+    const declared = parseInt(header.slice(72, 74), 10);
+    const actual = lines.filter((l) => l.startsWith("2")).length;
+    if (Number.isNaN(declared) || declared === actual) return null;
+    return `O cabeçalho declara ${declared} itens, mas o arquivo contém ${actual} linhas de item. Algum item pode ter ficado de fora.`;
+  }, [lines]);
+
   const defaultExportLayout = useMemo(() => {
     return detectedLayout === "v3_DI" ? "v3_DI" : "v3_DUIMP";
   }, [detectedLayout]);
@@ -245,6 +255,14 @@ export function TxtViewerStep({ onBack }: TxtViewerStepProps) {
       {/* Audit view */}
       {hasFile && (
         <div className="space-y-4">
+          {itemCountWarning && (
+            <div
+              role="alert"
+              className="p-3 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 text-sm text-amber-800 dark:text-amber-300"
+            >
+              {itemCountWarning}
+            </div>
+          )}
           <AuditSummaryBar
             lines={lines}
             filename={filename}

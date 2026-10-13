@@ -20,7 +20,19 @@ function App() {
     message: string;
     downloadUrl?: string;
     filename?: string;
+    warnings?: string[];
   } | null>(null);
+
+  const readWarnings = (response: Response): string[] => {
+    const raw = response.headers.get("x-warnings");
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.map(String) : [];
+    } catch {
+      return [];
+    }
+  };
 
   const [xmlFile, setXmlFile] = useState<File | null>(null);
   const [extractedData, setExtractedData] = useState<ExtractedData | null>(
@@ -83,7 +95,7 @@ function App() {
           const match = contentDisposition.match(/filename="?([^"]+)"?/);
           if (match?.[1]) filename = match[1];
         }
-        setReport({ status: "success", message: `Arquivo "${filename}" gerado com sucesso.`, downloadUrl: url, filename });
+        setReport({ status: "success", message: `Arquivo "${filename}" gerado com sucesso.`, downloadUrl: url, filename, warnings: readWarnings(response) });
         setStep("report");
       } else {
         const err = await response.json() as { detail?: { errors?: string[] } | string };
@@ -130,6 +142,7 @@ function App() {
           message: `File "${filename}" generated successfully and is ready for download.`,
           downloadUrl: url,
           filename: filename,
+          warnings: readWarnings(response),
         });
         setStep("report");
       } else {
