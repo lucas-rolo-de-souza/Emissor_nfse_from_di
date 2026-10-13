@@ -60,6 +60,7 @@ export interface ItemData {
   output_unit: string;
   cfop?: string;
   invoice_number?: string;
+  item_pedido_compra?: string;
 }
 
 export interface AdicaoData {

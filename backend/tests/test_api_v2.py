@@ -222,3 +222,23 @@ def test_tax_suspension_zeroes_ipi_pis_cofins():
     assert on[471:477] == "000.00" and off[471:477] == "002.10"
     assert on[501:516] == "000000000000.00"
     assert on[516:522] == "000.00" and off[516:522] == "010.45"
+
+
+def test_item_pedido_compra_is_user_supplied_and_defaults_to_sequence():
+    def item_line(value):
+        adicao = _make_adicao()
+        if value is not None:
+            adicao["items"][0]["item_pedido_compra"] = value
+        payload = {"header": _make_header(), "adicoes": [adicao]}
+        return client.post("/generate", json=payload).content.decode("utf-8").split("\r\n")[1]
+
+    assert item_line("11")[402:406] == "0011"
+    assert item_line(None)[402:406] == "0001"
+
+
+def test_li_number_keeps_asterisks():
+    adicao = _make_adicao()
+    adicao["li_number"] = "*00000001*"
+    payload = {"header": _make_header(), "adicoes": [adicao]}
+    line = client.post("/generate", json=payload).content.decode("utf-8").split("\r\n")[1]
+    assert line[428:438] == "*00000001*"

@@ -476,6 +476,7 @@ function AdicaoDetail({
                 <th className="px-3 py-2 text-right w-28">Valor Un.</th>
                 <th className="px-3 py-2 text-left w-36">Cód. Interno *</th>
                 <th className="px-3 py-2 text-left w-24">CFOP</th>
+                <th className="px-3 py-2 text-left w-20" title="Item do Pedido de Compra">Item PC</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -513,6 +514,14 @@ function AdicaoDetail({
                         onChange={(e) => onItemChange(adicaoIdx, itemIdx, "cfop", e.target.value)}
                         className="h-7 text-xs"
                         placeholder="Opcional"
+                      />
+                    </td>
+                    <td className="px-3 py-2">
+                      <Input
+                        value={item.item_pedido_compra || ""}
+                        onChange={(e) => onItemChange(adicaoIdx, itemIdx, "item_pedido_compra", e.target.value)}
+                        className="h-7 text-xs"
+                        placeholder={item.sequence}
                       />
                     </td>
                   </tr>

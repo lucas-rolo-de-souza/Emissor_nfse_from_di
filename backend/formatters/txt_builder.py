@@ -428,7 +428,7 @@ def _build_item_line(item: Dict, note_num: str, header_data: Dict) -> str:
     # 31 Numero do pedido (C, 17) — pos 412-428
     line += fw.format_alpha(item.get('numero_pedido', '') or header_data.get('numero_po', ''), 17)
     # 32 Nro do Pedido de Licenciamento (C, 10) — pos 429-438
-    line += fw.format_alpha(li_num.replace('*', ''), 10)
+    line += fw.format_alpha(li_num, 10)
     # 33 Série da Nota Fiscal (C, 3) — pos 439-441
     line += fw.format_alpha(serie, 3)
     # 34 Base de ICMS por item (N, 15, 2) — pos 442-456

@@ -94,6 +94,7 @@ class ItemData(BaseModel):
     output_unit: Optional[str] = None
     cfop: Optional[str] = None
     invoice_number: Optional[str] = None
+    item_pedido_compra: Optional[str] = None
     lote: Optional[str] = None
     validade: Optional[str] = None
 
@@ -205,7 +206,7 @@ def _flatten_item(adicao: dict, item: dict, header_data: dict) -> dict:
         'numero_processo': header_data.get('numero_processo', ''),
         'fob_reais': fob_reais,
         'fob_currency': adicao['fob_currency'],
-        'item_pedido_compra': str(item.get('sequence', '')).zfill(4)[:4],
+        'item_pedido_compra': (str(item.get('item_pedido_compra') or '').strip() or str(item.get('sequence', ''))).zfill(4)[:4],
         'numero_pedido': header_data.get('numero_pedido', '') or header_data.get('numero_po', ''),
         # II
         'aliq_ii': adicao['taxes']['ii']['rate'],

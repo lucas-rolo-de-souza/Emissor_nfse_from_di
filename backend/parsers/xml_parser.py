@@ -388,7 +388,7 @@ def parse_di_xml(xml_content: bytes) -> Tuple[Dict[str, Any], List[Dict[str, Any
         adicao_data = {
             'number': adicao_number,
             'ncm': get_text(adicao, 'dadosMercadoriaCodigoNcm'),
-            'li_number': get_text(adicao, 'numeroLI').replace('*', ''),
+            'li_number': get_text(adicao, 'numeroLI'),
             'codigo_li': codigo_li.replace('*', ''),
             'codigo_li_substitutiva': codigo_li_substitutiva.replace('*', ''),
             'net_weight': sanitize_decimal(adicao.get('dadosMercadoriaPesoLiquido'), 5),
