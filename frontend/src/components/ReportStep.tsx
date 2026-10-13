@@ -10,6 +10,7 @@ interface ReportStepProps {
     message: string;
     downloadUrl?: string;
     filename?: string;
+    warnings?: string[];
   } | null;
   onRestart: () => void;
 }
@@ -71,6 +72,20 @@ export function ReportStep({ report, onRestart }: ReportStepProps) {
       <p className="text-muted-foreground mb-8 px-4">
         {report?.message || "Ocorreu um erro desconhecido."}
       </p>
+
+      {isSuccess && report?.warnings && report.warnings.length > 0 && (
+        <div
+          role="alert"
+          className="mb-6 mx-4 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-3 text-left text-sm text-amber-800 dark:text-amber-300"
+        >
+          <p className="font-semibold mb-1">Atenção: verifique antes de enviar</p>
+          <ul className="list-disc pl-5 space-y-1">
+            {report.warnings.map((w, i) => (
+              <li key={i}>{w}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="pt-2 space-y-3">
         {isSuccess && report?.downloadUrl && (

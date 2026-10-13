@@ -138,3 +138,40 @@ def test_generate_endpoint_validation_error():
     assert response.status_code == 422
     detail = response.json()["detail"]
     assert isinstance(detail, (list, dict))
+
+
+def test_generate_no_warning_when_complete():
+    payload = {
+        "header": _make_header(total_additions=1),
+        "adicoes": [_make_adicao()],
+    }
+    response = client.post("/generate", json=payload)
+    assert response.status_code == 200
+    assert "x-warnings" not in response.headers
+
+
+def test_generate_warns_when_additions_left_out():
+    import json
+    payload = {
+        "header": _make_header(total_additions=2),
+        "adicoes": [_make_adicao()],
+    }
+    response = client.post("/generate", json=payload)
+    assert response.status_code == 200
+    warnings = json.loads(response.headers["x-warnings"])
+    assert len(warnings) == 1
+    assert "2 adi" in warnings[0] and "1 foram enviadas" in warnings[0]
+
+
+def test_parse_txt_warns_when_item_count_mismatch():
+    payload = {"header": _make_header(), "adicoes": [_make_adicao()]}
+    txt = client.post("/generate", json=payload).content
+    assert client.post("/parse-txt", files={"txt_file": ("a.txt", txt)}).json()["warnings"] == []
+
+    # Header declares 1 item (positions 73-74); claim 2 while the file keeps 1 item line
+    lines = txt.decode("utf-8").split("\r\n")
+    lines[0] = lines[0][:72] + "02" + lines[0][74:]
+    tampered = "\r\n".join(lines).encode("utf-8")
+    body = client.post("/parse-txt", files={"txt_file": ("a.txt", tampered)}).json()
+    assert len(body["warnings"]) == 1
+    assert "2 itens" in body["warnings"][0] and "1 linhas" in body["warnings"][0]
