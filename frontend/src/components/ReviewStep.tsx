@@ -249,6 +249,24 @@ export function ReviewStep({ data, onDataChange, onGenerate, onBack, isLoading }
             </div>
           ))}
 
+          <label className="flex items-start gap-3 p-4 rounded-lg border border-slate-200 cursor-pointer">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={!!data.header.suspensao_ipi_pis_cofins}
+              onChange={(e) =>
+                onDataChange({
+                  ...data,
+                  header: { ...data.header, suspensao_ipi_pis_cofins: e.target.checked },
+                })
+              }
+            />
+            <span className="text-sm text-slate-800">
+              <span className="font-semibold block">Suspensão de IPI, PIS e COFINS</span>
+              Zera alíquotas, bases, valores e quantidades desses tributos em todos os itens.
+            </span>
+          </label>
+
           <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
             <h3 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
               <DollarSign className="w-4 h-4" />

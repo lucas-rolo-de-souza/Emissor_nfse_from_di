@@ -17,6 +17,8 @@ from backend.formatters.txt_builder import (
     get_invoice_input_max_length,
     is_valid_aaaammdd,
     resolve_header_icms_rate,
+    apply_tax_suspension,
+    normalize_unit,
     ICMS_SOURCE_HEADER,
     ICMS_SOURCE_ITEMS,
     MV_EIC0076_STANDARD_15,
@@ -156,6 +158,7 @@ class HeaderData(BaseModel):
     aliq_icms_capa: Optional[float] = None
     mv_eic0076_mode: str = MV_EIC0076_STANDARD_15
     uf_emitente: str = "AM"
+    suspensao_ipi_pis_cofins: bool = False
 
 class ExtractedData(BaseModel):
     header: HeaderData
@@ -286,7 +289,7 @@ async def extract_data(xml_file: UploadFile = File(...)):
             for item in adicao['items']:
                 item['internal_code'] = item.get('generated_internal_code', '')
                 item['cfop'] = ''
-                item['output_unit'] = item.get('unit', '')
+                item['output_unit'] = normalize_unit(item.get('unit', ''))
                 item['invoice_number'] = invoice_num
         
         # Prepare header with empty user-fillable fields
@@ -307,7 +310,7 @@ async def extract_data(xml_file: UploadFile = File(...)):
             'perc_reducao': '',
             'cod_importador': header.get('importer_code', ''),
             'cod_transportador': header.get('transport_code', ''),
-            'cod_exportador': header.get('exporter_name', ''),
+            'cod_exportador': '',
             'invoice_number': header.get('invoice_number', ''),
             'duimp_number': header.get('duimp_number', ''),
             'versao_registro': '',
@@ -317,6 +320,7 @@ async def extract_data(xml_file: UploadFile = File(...)):
             'aliq_icms_capa': None,
             'mv_eic0076_mode': MV_EIC0076_STANDARD_15,
             'uf_emitente': 'AM',
+            'suspensao_ipi_pis_cofins': False,
         }
         
         return JSONResponse(content={
@@ -396,6 +400,9 @@ async def generate_txt(request: GenerateRequest):
                 if validade:
                     flattened['validade'] = validade
                 items_flat.append(flattened)
+
+        if header_data.get('suspensao_ipi_pis_cofins'):
+            apply_tax_suspension(items_flat)
 
         if len(items_flat) > 99:
             errors.append("Quantidade de Itens exceeds layout maximum of 99")

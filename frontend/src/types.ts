@@ -123,6 +123,7 @@ export interface HeaderData {
   mv_eic0010_source?: string;
   aliq_icms_capa?: string;
   mv_eic0076_mode?: string;
+  suspensao_ipi_pis_cofins?: boolean;
 }
 
 export interface ExtractedData {

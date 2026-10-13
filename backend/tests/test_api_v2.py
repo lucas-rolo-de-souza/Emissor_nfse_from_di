@@ -175,3 +175,50 @@ def test_parse_txt_warns_when_item_count_mismatch():
     body = client.post("/parse-txt", files={"txt_file": ("a.txt", tampered)}).json()
     assert len(body["warnings"]) == 1
     assert "2 itens" in body["warnings"][0] and "1 linhas" in body["warnings"][0]
+
+
+def _generate_lines(header_overrides=None):
+    payload = {
+        "header": _make_header(**(header_overrides or {})),
+        "adicoes": [_make_adicao()],
+    }
+    response = client.post("/generate", json=payload)
+    assert response.status_code == 200
+    return response.content.decode("utf-8").split("\r\n")
+
+
+def test_client_styling_ncm_cfop_lancamento_and_unit():
+    header, item = _generate_lines()[:2]
+    assert header[27:33] == "  3102"          # CFOP right-aligned, space-padded
+    assert item[14:20] == "      "            # Número do Lançamento blank
+    assert item[20:30] == "85044021  "        # NCM left-aligned, space-padded
+    assert item[66:69] == "UN "
+
+
+def test_unit_name_is_normalized():
+    from backend.formatters.txt_builder import normalize_unit
+    assert normalize_unit("UNIDADE             ") == "UN"
+    assert normalize_unit("kg") == "KG"
+
+
+def test_header_cnpj_comes_from_importer_code():
+    header = _generate_lines({"importer_code": "12115480000387"})[0]
+    assert header[38:52] == "12115480000387"
+
+
+def test_tax_suspension_zeroes_ipi_pis_cofins():
+    adicao = _make_adicao()
+    adicao["taxes"]["ipi"].update(rate=9.75, base_calc=100.0, value_due=9.75, value_collect=9.75)
+    adicao["taxes"]["pis"].update(rate=2.1, base_calc=100.0, value_due=2.1, value_collect=2.1)
+    adicao["taxes"]["cofins"].update(rate=10.45, base_calc=100.0, value_due=10.45, value_collect=10.45)
+
+    def item_line(suspend):
+        payload = {"header": _make_header(suspensao_ipi_pis_cofins=suspend), "adicoes": [adicao]}
+        return client.post("/generate", json=payload).content.decode("utf-8").split("\r\n")[1]
+
+    on, off = item_line(True), item_line(False)
+    # Alíq. IPI (322-326), Alíq. PIS (472-477), Valor PIS (502-516), Alíq. COFINS (517-522)
+    assert on[321:326] == "00.00" and off[321:326] == "09.75"
+    assert on[471:477] == "000.00" and off[471:477] == "002.10"
+    assert on[501:516] == "000000000000.00"
+    assert on[516:522] == "000.00" and off[516:522] == "010.45"
