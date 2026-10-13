@@ -170,6 +170,50 @@ class GenerateRequest(BaseModel):
     adicoes: List[AdicaoData]
 
 
+def _split_amount(total: float, weights: List[float], decimals: int) -> List[float]:
+    """Split `total` pro-rata to `weights`; the last part absorbs the rounding remainder."""
+    total = float(total or 0.0)
+    if len(weights) == 1:
+        return [total]
+    weight_sum = sum(weights)
+    shares = [w / weight_sum for w in weights] if weight_sum > 0 else [1 / len(weights)] * len(weights)
+    parts = [round(total * share, decimals) for share in shares[:-1]]
+    parts.append(round(total - sum(parts), decimals))
+    return parts
+
+
+def allocate_adicao_to_items(adicao: dict) -> List[dict]:
+    """
+    Return one adicao-like dict per item, with the addition's money values, tax values/bases
+    and net weight shared across its items in proportion to quantity x unit value.
+    Rates are unchanged. A single-item addition is returned as is.
+    """
+    items = adicao['items']
+    if len(items) <= 1:
+        return [adicao]
+
+    weights = [float(i.get('qty') or 0) * float(i.get('unit_value') or 0) for i in items]
+    if sum(weights) <= 0:
+        weights = [float(i.get('qty') or 0) for i in items]
+
+    scalar_fields = {
+        'fob_reais': 2, 'freight_reais': 2, 'insurance_reais': 2,
+        'fob_currency': 7, 'net_weight': 5, 'gross_weight': 5,
+    }
+    tax_fields = {'base_calc': 2, 'value_due': 2, 'value_collect': 2}
+
+    allocated = [{**adicao, 'taxes': {k: dict(v) for k, v in adicao['taxes'].items()}} for _ in items]
+    for field, decimals in scalar_fields.items():
+        for target, part in zip(allocated, _split_amount(adicao.get(field), weights, decimals)):
+            target[field] = part
+    for tax in adicao['taxes']:
+        for field, decimals in tax_fields.items():
+            parts = _split_amount(adicao['taxes'][tax].get(field), weights, decimals)
+            for target, part in zip(allocated, parts):
+                target['taxes'][tax][field] = part
+    return allocated
+
+
 def _flatten_item(adicao: dict, item: dict, header_data: dict) -> dict:
     fob_reais = adicao['fob_reais']
     frete_item = adicao['freight_reais']
@@ -376,8 +420,8 @@ async def generate_txt(request: GenerateRequest):
                 errors.append("Número da DI is required for DI layouts")
         
         items_flat = []
-        for adicao in adicoes_data:
-            for item in adicao['items']:
+        for adicao_full in adicoes_data:
+            for item, adicao in zip(adicao_full['items'], allocate_adicao_to_items(adicao_full)):
                 if not item.get('internal_code'):
                     errors.append(f"Adição {adicao['number']} - Item {item['sequence']}: Internal Code is required")
                 lote = str(adicao.get('lote') or item.get('lote') or '').strip()

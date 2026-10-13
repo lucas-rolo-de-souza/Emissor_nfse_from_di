@@ -242,3 +242,39 @@ def test_li_number_keeps_asterisks():
     payload = {"header": _make_header(), "adicoes": [adicao]}
     line = client.post("/generate", json=payload).content.decode("utf-8").split("\r\n")[1]
     assert line[428:438] == "*00000001*"
+
+
+def _multi_item_adicao(qtys, fob=100.0, freight=10.0):
+    adicao = _make_adicao()
+    adicao["fob_reais"] = fob
+    adicao["freight_reais"] = freight
+    adicao["net_weight"] = 6.2
+    adicao["taxes"]["ii"].update(rate=10, base_calc=fob, value_due=20.0, value_collect=20.0)
+    base = adicao["items"][0]
+    adicao["items"] = [
+        {**base, "sequence": f"{n:02d}", "qty": q, "internal_code": "PROD-001"}
+        for n, q in enumerate(qtys, start=1)
+    ]
+    return adicao
+
+
+def test_addition_values_are_shared_across_its_items():
+    from backend.app import allocate_adicao_to_items
+    adicao = _multi_item_adicao([33.0, 29.0])
+    parts = allocate_adicao_to_items(adicao)
+    assert [p["fob_reais"] for p in parts] == [53.23, 46.77]
+    assert sum(p["freight_reais"] for p in parts) == pytest.approx(10.0)
+    assert sum(p["taxes"]["ii"]["value_due"] for p in parts) == pytest.approx(20.0)
+    assert sum(p["net_weight"] for p in parts) == pytest.approx(6.2)
+    assert parts[0]["taxes"]["ii"]["rate"] == 10  # rates are not split
+
+
+def test_generate_does_not_repeat_addition_totals_per_item():
+    adicao = _multi_item_adicao([1.0, 1.0, 1.0, 1.0], fob=100.0)
+    payload = {"header": _make_header(total_additions=1), "adicoes": [adicao]}
+    lines = client.post("/generate", json=payload).content.decode("utf-8").split("\r\n")
+    fobs = [float(l[261:276]) for l in lines[1:5]]
+    assert fobs == [25.0, 25.0, 25.0, 25.0]
+    assert sum(fobs) == pytest.approx(100.0)
+    # header Valor Total da Mercadoria (247-261) is the sum of the items, not 4x
+    assert float(lines[0][246:261]) == pytest.approx(sum(float(l[84:99]) for l in lines[1:5]))
