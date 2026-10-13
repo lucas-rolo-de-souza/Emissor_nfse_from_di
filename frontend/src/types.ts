@@ -61,6 +61,8 @@ export interface ItemData {
   cfop?: string;
   invoice_number?: string;
   item_pedido_compra?: string;
+  // UI-only: marks an item created with "Dividir item"
+  is_split_part?: boolean;
 }
 
 export interface AdicaoData {
