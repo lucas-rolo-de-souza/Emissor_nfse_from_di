@@ -425,7 +425,7 @@ def test_lote_blank_forces_validade_blank():
     assert item_line[670:678] == " " * 8
 
 
-def test_asterisks_stripped_from_li_fields():
+def test_asterisks_kept_in_pli_and_stripped_from_li_codes():
     header = _make_header()
     item = _make_item(
         total_value=1230.0,
@@ -436,9 +436,9 @@ def test_asterisks_stripped_from_li_fields():
     _, lines = _build_and_split(header, [item])
     item_line = lines[1]
     
-    # Verify build_txt_content stripped the asterisks
-    # Field 32: num_pli is at 428:438 (length 10)
-    assert item_line[428:438] == "00000318  "
+    # Field 32: num_pli (428:438) keeps the asterisks, as the client's files do
+    assert item_line[428:438] == "*00000318*"
+    # Fields 58/59 still have the asterisks stripped
     # Field 58: codigo_li is at 697:707 (length 10)
     assert item_line[697:707] == "123456    "
     # Field 59: codigo_li_substitutiva is at 707:717 (length 10)

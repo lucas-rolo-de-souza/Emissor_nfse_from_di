@@ -175,3 +175,106 @@ def test_parse_txt_warns_when_item_count_mismatch():
     body = client.post("/parse-txt", files={"txt_file": ("a.txt", tampered)}).json()
     assert len(body["warnings"]) == 1
     assert "2 itens" in body["warnings"][0] and "1 linhas" in body["warnings"][0]
+
+
+def _generate_lines(header_overrides=None):
+    payload = {
+        "header": _make_header(**(header_overrides or {})),
+        "adicoes": [_make_adicao()],
+    }
+    response = client.post("/generate", json=payload)
+    assert response.status_code == 200
+    return response.content.decode("utf-8").split("\r\n")
+
+
+def test_client_styling_ncm_cfop_lancamento_and_unit():
+    header, item = _generate_lines()[:2]
+    assert header[27:33] == "  3102"          # CFOP right-aligned, space-padded
+    assert item[14:20] == "      "            # Número do Lançamento blank
+    assert item[20:30] == "85044021  "        # NCM left-aligned, space-padded
+    assert item[66:69] == "UN "
+
+
+def test_unit_name_is_normalized():
+    from backend.formatters.txt_builder import normalize_unit
+    assert normalize_unit("UNIDADE             ") == "UN"
+    assert normalize_unit("kg") == "KG"
+
+
+def test_header_cnpj_comes_from_importer_code():
+    header = _generate_lines({"importer_code": "12115480000387"})[0]
+    assert header[38:52] == "12115480000387"
+
+
+def test_tax_suspension_zeroes_ipi_pis_cofins():
+    adicao = _make_adicao()
+    adicao["taxes"]["ipi"].update(rate=9.75, base_calc=100.0, value_due=9.75, value_collect=9.75)
+    adicao["taxes"]["pis"].update(rate=2.1, base_calc=100.0, value_due=2.1, value_collect=2.1)
+    adicao["taxes"]["cofins"].update(rate=10.45, base_calc=100.0, value_due=10.45, value_collect=10.45)
+
+    def item_line(suspend):
+        payload = {"header": _make_header(suspensao_ipi_pis_cofins=suspend), "adicoes": [adicao]}
+        return client.post("/generate", json=payload).content.decode("utf-8").split("\r\n")[1]
+
+    on, off = item_line(True), item_line(False)
+    # Alíq. IPI (322-326), Alíq. PIS (472-477), Valor PIS (502-516), Alíq. COFINS (517-522)
+    assert on[321:326] == "00.00" and off[321:326] == "09.75"
+    assert on[471:477] == "000.00" and off[471:477] == "002.10"
+    assert on[501:516] == "000000000000.00"
+    assert on[516:522] == "000.00" and off[516:522] == "010.45"
+
+
+def test_item_pedido_compra_is_user_supplied_and_defaults_to_sequence():
+    def item_line(value):
+        adicao = _make_adicao()
+        if value is not None:
+            adicao["items"][0]["item_pedido_compra"] = value
+        payload = {"header": _make_header(), "adicoes": [adicao]}
+        return client.post("/generate", json=payload).content.decode("utf-8").split("\r\n")[1]
+
+    assert item_line("11")[402:406] == "0011"
+    assert item_line(None)[402:406] == "0001"
+
+
+def test_li_number_keeps_asterisks():
+    adicao = _make_adicao()
+    adicao["li_number"] = "*00000001*"
+    payload = {"header": _make_header(), "adicoes": [adicao]}
+    line = client.post("/generate", json=payload).content.decode("utf-8").split("\r\n")[1]
+    assert line[428:438] == "*00000001*"
+
+
+def _multi_item_adicao(qtys, fob=100.0, freight=10.0):
+    adicao = _make_adicao()
+    adicao["fob_reais"] = fob
+    adicao["freight_reais"] = freight
+    adicao["net_weight"] = 6.2
+    adicao["taxes"]["ii"].update(rate=10, base_calc=fob, value_due=20.0, value_collect=20.0)
+    base = adicao["items"][0]
+    adicao["items"] = [
+        {**base, "sequence": f"{n:02d}", "qty": q, "internal_code": "PROD-001"}
+        for n, q in enumerate(qtys, start=1)
+    ]
+    return adicao
+
+
+def test_addition_values_are_shared_across_its_items():
+    from backend.app import allocate_adicao_to_items
+    adicao = _multi_item_adicao([33.0, 29.0])
+    parts = allocate_adicao_to_items(adicao)
+    assert [p["fob_reais"] for p in parts] == [53.23, 46.77]
+    assert sum(p["freight_reais"] for p in parts) == pytest.approx(10.0)
+    assert sum(p["taxes"]["ii"]["value_due"] for p in parts) == pytest.approx(20.0)
+    assert sum(p["net_weight"] for p in parts) == pytest.approx(6.2)
+    assert parts[0]["taxes"]["ii"]["rate"] == 10  # rates are not split
+
+
+def test_generate_does_not_repeat_addition_totals_per_item():
+    adicao = _multi_item_adicao([1.0, 1.0, 1.0, 1.0], fob=100.0)
+    payload = {"header": _make_header(total_additions=1), "adicoes": [adicao]}
+    lines = client.post("/generate", json=payload).content.decode("utf-8").split("\r\n")
+    fobs = [float(l[261:276]) for l in lines[1:5]]
+    assert fobs == [25.0, 25.0, 25.0, 25.0]
+    assert sum(fobs) == pytest.approx(100.0)
+    # header Valor Total da Mercadoria (247-261) is the sum of the items, not 4x
+    assert float(lines[0][246:261]) == pytest.approx(sum(float(l[84:99]) for l in lines[1:5]))

@@ -115,6 +115,14 @@ function ItemRow({
             placeholder="Opcional"
           />
         </div>
+        <div className="space-y-1">
+          <Label>Item do Pedido de Compra</Label>
+          <Input
+            value={item.item_pedido_compra || ""}
+            onChange={(e) => update({ item_pedido_compra: e.target.value })}
+            placeholder="Opcional (padrão: sequência)"
+          />
+        </div>
       </div>
     </div>
   );

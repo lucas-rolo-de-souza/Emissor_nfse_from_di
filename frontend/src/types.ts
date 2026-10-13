@@ -60,6 +60,9 @@ export interface ItemData {
   output_unit: string;
   cfop?: string;
   invoice_number?: string;
+  item_pedido_compra?: string;
+  // UI-only: marks an item created with "Dividir item"
+  is_split_part?: boolean;
 }
 
 export interface AdicaoData {
@@ -123,6 +126,7 @@ export interface HeaderData {
   mv_eic0010_source?: string;
   aliq_icms_capa?: string;
   mv_eic0076_mode?: string;
+  suspensao_ipi_pis_cofins?: boolean;
 }
 
 export interface ExtractedData {

@@ -17,6 +17,8 @@ from backend.formatters.txt_builder import (
     get_invoice_input_max_length,
     is_valid_aaaammdd,
     resolve_header_icms_rate,
+    apply_tax_suspension,
+    normalize_unit,
     ICMS_SOURCE_HEADER,
     ICMS_SOURCE_ITEMS,
     MV_EIC0076_STANDARD_15,
@@ -92,6 +94,7 @@ class ItemData(BaseModel):
     output_unit: Optional[str] = None
     cfop: Optional[str] = None
     invoice_number: Optional[str] = None
+    item_pedido_compra: Optional[str] = None
     lote: Optional[str] = None
     validade: Optional[str] = None
 
@@ -156,6 +159,7 @@ class HeaderData(BaseModel):
     aliq_icms_capa: Optional[float] = None
     mv_eic0076_mode: str = MV_EIC0076_STANDARD_15
     uf_emitente: str = "AM"
+    suspensao_ipi_pis_cofins: bool = False
 
 class ExtractedData(BaseModel):
     header: HeaderData
@@ -164,6 +168,50 @@ class ExtractedData(BaseModel):
 class GenerateRequest(BaseModel):
     header: HeaderData
     adicoes: List[AdicaoData]
+
+
+def _split_amount(total: float, weights: List[float], decimals: int) -> List[float]:
+    """Split `total` pro-rata to `weights`; the last part absorbs the rounding remainder."""
+    total = float(total or 0.0)
+    if len(weights) == 1:
+        return [total]
+    weight_sum = sum(weights)
+    shares = [w / weight_sum for w in weights] if weight_sum > 0 else [1 / len(weights)] * len(weights)
+    parts = [round(total * share, decimals) for share in shares[:-1]]
+    parts.append(round(total - sum(parts), decimals))
+    return parts
+
+
+def allocate_adicao_to_items(adicao: dict) -> List[dict]:
+    """
+    Return one adicao-like dict per item, with the addition's money values, tax values/bases
+    and net weight shared across its items in proportion to quantity x unit value.
+    Rates are unchanged. A single-item addition is returned as is.
+    """
+    items = adicao['items']
+    if len(items) <= 1:
+        return [adicao]
+
+    weights = [float(i.get('qty') or 0) * float(i.get('unit_value') or 0) for i in items]
+    if sum(weights) <= 0:
+        weights = [float(i.get('qty') or 0) for i in items]
+
+    scalar_fields = {
+        'fob_reais': 2, 'freight_reais': 2, 'insurance_reais': 2,
+        'fob_currency': 7, 'net_weight': 5, 'gross_weight': 5,
+    }
+    tax_fields = {'base_calc': 2, 'value_due': 2, 'value_collect': 2}
+
+    allocated = [{**adicao, 'taxes': {k: dict(v) for k, v in adicao['taxes'].items()}} for _ in items]
+    for field, decimals in scalar_fields.items():
+        for target, part in zip(allocated, _split_amount(adicao.get(field), weights, decimals)):
+            target[field] = part
+    for tax in adicao['taxes']:
+        for field, decimals in tax_fields.items():
+            parts = _split_amount(adicao['taxes'][tax].get(field), weights, decimals)
+            for target, part in zip(allocated, parts):
+                target['taxes'][tax][field] = part
+    return allocated
 
 
 def _flatten_item(adicao: dict, item: dict, header_data: dict) -> dict:
@@ -202,7 +250,7 @@ def _flatten_item(adicao: dict, item: dict, header_data: dict) -> dict:
         'numero_processo': header_data.get('numero_processo', ''),
         'fob_reais': fob_reais,
         'fob_currency': adicao['fob_currency'],
-        'item_pedido_compra': str(item.get('sequence', '')).zfill(4)[:4],
+        'item_pedido_compra': (str(item.get('item_pedido_compra') or '').strip() or str(item.get('sequence', ''))).zfill(4)[:4],
         'numero_pedido': header_data.get('numero_pedido', '') or header_data.get('numero_po', ''),
         # II
         'aliq_ii': adicao['taxes']['ii']['rate'],
@@ -286,7 +334,7 @@ async def extract_data(xml_file: UploadFile = File(...)):
             for item in adicao['items']:
                 item['internal_code'] = item.get('generated_internal_code', '')
                 item['cfop'] = ''
-                item['output_unit'] = item.get('unit', '')
+                item['output_unit'] = normalize_unit(item.get('unit', ''))
                 item['invoice_number'] = invoice_num
         
         # Prepare header with empty user-fillable fields
@@ -307,7 +355,7 @@ async def extract_data(xml_file: UploadFile = File(...)):
             'perc_reducao': '',
             'cod_importador': header.get('importer_code', ''),
             'cod_transportador': header.get('transport_code', ''),
-            'cod_exportador': header.get('exporter_name', ''),
+            'cod_exportador': '',
             'invoice_number': header.get('invoice_number', ''),
             'duimp_number': header.get('duimp_number', ''),
             'versao_registro': '',
@@ -317,6 +365,7 @@ async def extract_data(xml_file: UploadFile = File(...)):
             'aliq_icms_capa': None,
             'mv_eic0076_mode': MV_EIC0076_STANDARD_15,
             'uf_emitente': 'AM',
+            'suspensao_ipi_pis_cofins': False,
         }
         
         return JSONResponse(content={
@@ -371,8 +420,8 @@ async def generate_txt(request: GenerateRequest):
                 errors.append("Número da DI is required for DI layouts")
         
         items_flat = []
-        for adicao in adicoes_data:
-            for item in adicao['items']:
+        for adicao_full in adicoes_data:
+            for item, adicao in zip(adicao_full['items'], allocate_adicao_to_items(adicao_full)):
                 if not item.get('internal_code'):
                     errors.append(f"Adição {adicao['number']} - Item {item['sequence']}: Internal Code is required")
                 lote = str(adicao.get('lote') or item.get('lote') or '').strip()
@@ -396,6 +445,9 @@ async def generate_txt(request: GenerateRequest):
                 if validade:
                     flattened['validade'] = validade
                 items_flat.append(flattened)
+
+        if header_data.get('suspensao_ipi_pis_cofins'):
+            apply_tax_suspension(items_flat)
 
         if len(items_flat) > 99:
             errors.append("Quantidade de Itens exceeds layout maximum of 99")

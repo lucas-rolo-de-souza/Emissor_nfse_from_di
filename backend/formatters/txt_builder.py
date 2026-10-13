@@ -52,6 +52,11 @@ class FixedWidth:
 
 
     @staticmethod
+    def format_int_spaced(value: Any, width: int) -> str:
+        """Right-aligned digits padded with spaces (client styling, e.g. CFOP)."""
+        return str(value).strip().rjust(width)[:width]
+
+    @staticmethod
     def format_int(value: Any, width: int) -> str:
         """Zero-padded integer string."""
         return str(value).zfill(width)[:width]
@@ -227,12 +232,13 @@ def _build_header_line(header_data: Dict, items_data: List[Dict]) -> str:
     if get_icms_source(header_data) == ICMS_SOURCE_HEADER:
         aliq_icms_capa_val = resolve_header_icms_rate(header_data, items_data)
     line += fw.format_num(aliq_icms_capa_val, 7, 2)
-    # 07 CFOP (N, 6) — pos 028-033
-    line += fw.format_int(cfop, 6)
+    # 07 CFOP (N, 6) — pos 028-033 (right-aligned, space-padded)
+    line += fw.format_int_spaced(cfop, 6)
     # 08 CFP (A, 5) — pos 034-038
     line += fw.format_alpha("", 5)
-    # 09 CGC - Emitente (N, 14) — pos 039-052
-    line += fw.format_int("0", 14)
+    # 09 CGC - Emitente (N, 14) — pos 039-052 (importer CNPJ from the DI when available)
+    cnpj = ''.join(filter(str.isdigit, str(header_data.get('importer_code') or '')))
+    line += fw.format_int(cnpj if len(cnpj) == 14 else "0", 14)
     # 10 Código do IPI (A, 3) — pos 053-055
     line += fw.format_alpha("", 3)
     # 11 Número do Processo (A, 17) — pos 056-072
@@ -321,6 +327,24 @@ def _build_header_line(header_data: Dict, items_data: List[Dict]) -> str:
     return line
 
 
+UNIT_ALIASES = {"UNIDADE": "UN", "QUILOGRAMA LIQUIDO": "KG", "QUILOGRAMA": "KG", "PECA": "PC"}
+
+
+def normalize_unit(unit: Any) -> str:
+    """Map Siscomex unit names (e.g. 'UNIDADE') to the short code Easy expects (e.g. 'UN')."""
+    text = str(unit or '').strip().upper()
+    return UNIT_ALIASES.get(text, text)[:3]
+
+
+def apply_tax_suspension(items: List[Dict]) -> None:
+    """Zero IPI, PIS and COFINS (rates, bases, values, quantities) on every item, in place."""
+    for item in items:
+        for key in ('aliq_ipi', 'valor_ipi', 'base_ipi', 'qtde_ipi',
+                    'aliq_pis', 'valor_pis', 'base_pis', 'qtde_pis',
+                    'aliq_cofins', 'valor_cofins', 'base_cofins', 'qtde_cofins'):
+            item[key] = 0.0
+
+
 def _build_item_line(item: Dict, note_num: str, header_data: Dict) -> str:
     fw = FixedWidth
 
@@ -331,7 +355,7 @@ def _build_item_line(item: Dict, note_num: str, header_data: Dict) -> str:
     frete    = item.get('frete_item', 0)
     seguro   = item.get('seguro_item', 0)
     desc     = str(item.get('description', '')).split('\n')[0].strip()
-    unit     = str(item.get('output_unit', 'UN'))[:3].upper()
+    unit     = normalize_unit(item.get('output_unit') or 'UN')
     li_num   = item.get('li_number') or ''
 
     processo = item.get('numero_processo') or header_data.get('numero_processo', '')
@@ -349,10 +373,10 @@ def _build_item_line(item: Dict, note_num: str, header_data: Dict) -> str:
     line += fw.format_int("01", 2)
     # 04 Número da Nota (N, 9) — pos 006-014
     line += fw.format_int(note_num, 9)
-    # 05 Número do Lançamento (N, 6) — pos 015-020
-    line += fw.format_int("", 6)
-    # 06 Classificação Fiscal / NCM (N, 10) — pos 021-030
-    line += fw.format_int(ncm[:8], 10)
+    # 05 Número do Lançamento (N, 6) — pos 015-020 (NOT_USED, left blank)
+    line += fw.format_alpha("", 6)
+    # 06 Classificação Fiscal / NCM (N, 10) — pos 021-030 (left-aligned, space-padded)
+    line += fw.format_alpha(ncm[:8], 10)
     # 07 Código do Produto (A, 20) — pos 031-050
     line += fw.format_alpha(internal, 20)
     # 08 Código - Trib. - ICMS (N, 1) — pos 051
@@ -404,7 +428,7 @@ def _build_item_line(item: Dict, note_num: str, header_data: Dict) -> str:
     # 31 Numero do pedido (C, 17) — pos 412-428
     line += fw.format_alpha(item.get('numero_pedido', '') or header_data.get('numero_po', ''), 17)
     # 32 Nro do Pedido de Licenciamento (C, 10) — pos 429-438
-    line += fw.format_alpha(li_num.replace('*', ''), 10)
+    line += fw.format_alpha(li_num, 10)
     # 33 Série da Nota Fiscal (C, 3) — pos 439-441
     line += fw.format_alpha(serie, 3)
     # 34 Base de ICMS por item (N, 15, 2) — pos 442-456

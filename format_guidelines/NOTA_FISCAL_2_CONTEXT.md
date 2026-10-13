@@ -23,6 +23,13 @@
 - **TAM note:** `TAM = 15, DEC = 2` → 12 integer digits + dot + 2 decimal digits = 15 total.
 - **Example:** Value `5.762,31` in field `TAM 15, DEC 2`: `000005762.31`.
 
+**Client styling exceptions** (TOTVS declares NCM and CFOP as type N but defines no padding rule; the client's accepted files use spaces):
+- **NCM (021-030):** left-aligned, space-padded (`85044090  `).
+- **CFOP header (028-033):** right-aligned, space-padded (`  3102`).
+- **Número do Lançamento (015-020):** left blank.
+- **Unidade (067-069):** short code (`UN`, `KG`), never the Siscomex name (`UNIDADE`). TOTVS marks it mandatory.
+- **IPI / PIS / COFINS:** all rates, bases, values and quantities are `0` when the header flag `suspensao_ipi_pis_cofins` is set.
+
 ### 2.2 Alphanumeric / Character Fields (A / C)
 
 - **Padding:** Space-padded to the right.

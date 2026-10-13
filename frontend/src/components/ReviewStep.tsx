@@ -127,6 +127,38 @@ export function ReviewStep({ data, onDataChange, onGenerate, onBack, isLoading }
     onDataChange({ ...data, header: { ...data.header, [field]: value } });
   };
 
+  const handleItemSplit = (adicaoIdx: number, itemIdx: number, newQty: number) => {
+    const adicoes = data.adicoes.map((a, ai) => {
+      if (ai !== adicaoIdx) return a;
+      const original = a.items[itemIdx];
+      if (!(newQty > 0 && newQty < original.qty)) return a;
+      const nextSeq = Math.max(...a.items.map((it) => parseInt(it.sequence, 10) || 0)) + 1;
+      const part: ItemData = {
+        ...original,
+        sequence: String(nextSeq).padStart(2, "0"),
+        qty: newQty,
+        item_pedido_compra: "",
+        is_split_part: true,
+      };
+      const items = a.items.map((it, ii) => (ii === itemIdx ? { ...it, qty: +(it.qty - newQty).toFixed(5) } : it));
+      items.splice(itemIdx + 1, 0, part);
+      return { ...a, items };
+    });
+    onDataChange({ ...data, adicoes });
+  };
+
+  const handleItemMerge = (adicaoIdx: number, itemIdx: number) => {
+    const adicoes = data.adicoes.map((a, ai) => {
+      if (ai !== adicaoIdx || itemIdx < 1) return a;
+      const removed = a.items[itemIdx];
+      const items = a.items
+        .filter((_, ii) => ii !== itemIdx)
+        .map((it, ii) => (ii === itemIdx - 1 ? { ...it, qty: +(it.qty + removed.qty).toFixed(5) } : it));
+      return { ...a, items };
+    });
+    onDataChange({ ...data, adicoes });
+  };
+
   const handleItemChange = (adicaoIdx: number, itemIdx: number, field: keyof ItemData, value: string) => {
     const newAdicoes = data.adicoes.map((a, ai) => {
       if (ai !== adicaoIdx) return a;
@@ -249,6 +281,24 @@ export function ReviewStep({ data, onDataChange, onGenerate, onBack, isLoading }
             </div>
           ))}
 
+          <label className="flex items-start gap-3 p-4 rounded-lg border border-slate-200 cursor-pointer">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={!!data.header.suspensao_ipi_pis_cofins}
+              onChange={(e) =>
+                onDataChange({
+                  ...data,
+                  header: { ...data.header, suspensao_ipi_pis_cofins: e.target.checked },
+                })
+              }
+            />
+            <span className="text-sm text-slate-800">
+              <span className="font-semibold block">Suspensão de IPI, PIS e COFINS</span>
+              Zera alíquotas, bases, valores e quantidades desses tributos em todos os itens.
+            </span>
+          </label>
+
           <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
             <h3 className="text-sm font-semibold text-slate-800 mb-3 flex items-center gap-2">
               <DollarSign className="w-4 h-4" />
@@ -337,6 +387,8 @@ export function ReviewStep({ data, onDataChange, onGenerate, onBack, isLoading }
                         adicaoIdx={adicaoIdx}
                         itemErrors={validation.itemErrors}
                         onItemChange={handleItemChange}
+                        onItemSplit={handleItemSplit}
+                        onItemMerge={handleItemMerge}
                       />
                     </div>
                   </CollapsibleContent>
@@ -368,12 +420,17 @@ function AdicaoDetail({
   adicaoIdx,
   itemErrors,
   onItemChange,
+  onItemSplit,
+  onItemMerge,
 }: {
   adicao: AdicaoData;
   adicaoIdx: number;
   itemErrors: { adicaoIdx: number; itemIdx: number; field: string }[];
   onItemChange: (adicaoIdx: number, itemIdx: number, field: keyof ItemData, value: string) => void;
+  onItemSplit: (adicaoIdx: number, itemIdx: number, newQty: number) => void;
+  onItemMerge: (adicaoIdx: number, itemIdx: number) => void;
 }) {
+  const [splitting, setSplitting] = useState<{ itemIdx: number; value: string } | null>(null);
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-6">
@@ -458,6 +515,8 @@ function AdicaoDetail({
                 <th className="px-3 py-2 text-right w-28">Valor Un.</th>
                 <th className="px-3 py-2 text-left w-36">Cód. Interno *</th>
                 <th className="px-3 py-2 text-left w-24">CFOP</th>
+                <th className="px-3 py-2 text-left w-20" title="Item do Pedido de Compra">Item PC</th>
+                <th className="px-3 py-2 text-left w-40">Dividir</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -496,6 +555,53 @@ function AdicaoDetail({
                         className="h-7 text-xs"
                         placeholder="Opcional"
                       />
+                    </td>
+                    <td className="px-3 py-2">
+                      <Input
+                        value={item.item_pedido_compra || ""}
+                        onChange={(e) => onItemChange(adicaoIdx, itemIdx, "item_pedido_compra", e.target.value)}
+                        className="h-7 text-xs"
+                        placeholder={item.sequence}
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-xs">
+                      {splitting?.itemIdx === itemIdx ? (
+                        <div className="flex items-center gap-1">
+                          <Input
+                            value={splitting.value}
+                            onChange={(e) => setSplitting({ itemIdx, value: e.target.value })}
+                            className="h-7 w-16 text-xs"
+                            placeholder="Qtd"
+                            aria-label="Quantidade da nova parte"
+                          />
+                          <button
+                            className="text-blue-600 hover:underline"
+                            onClick={() => {
+                              onItemSplit(adicaoIdx, itemIdx, parseFloat(splitting.value.replace(",", ".")));
+                              setSplitting(null);
+                            }}
+                          >
+                            OK
+                          </button>
+                          <button className="text-slate-400 hover:underline" onClick={() => setSplitting(null)}>
+                            Cancelar
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex gap-3">
+                          <button
+                            className="text-blue-600 hover:underline"
+                            onClick={() => setSplitting({ itemIdx, value: "" })}
+                          >
+                            Dividir
+                          </button>
+                          {item.is_split_part && (
+                            <button className="text-red-600 hover:underline" onClick={() => onItemMerge(adicaoIdx, itemIdx)}>
+                              Juntar
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );
